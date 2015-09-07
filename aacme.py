@@ -6,6 +6,7 @@ import sys
 import pexpect
 import yaml
 import click
+import collections
 import io
 import av
 
@@ -27,6 +28,45 @@ def get_config_value(key, default=None):
         return cfg[key]
     return default
 
+
+def get_video_paths():
+    directories = [pathlib.Path(d) for d in get_config_value("directories", [])]
+    globs = ["**/*.{0}".format(e) for e in get_config_value("extensions", ["avi"])]
+
+    video_files = []
+    for directory in directories:
+        logging.info("Searching directory: {0}".format(directory))
+        for glob in globs:
+            video_files.extend(directory.glob(glob))
+
+    return video_files
+
+
+def get_video_info(path):
+    options = [
+        "-v", "quiet",
+        "-print_format", "json",
+        "-show_format",
+        "-show_streams"
+    ]
+
+    child = pexpect.spawnu("ffprobe", options + [str(path)], logfile=sys.stdout)
+    child.expect(pexpect.EOF)
+    ffprobe_json = child.before
+    return json.loads(ffprobe_json)
+
+
+def get_audio_streams_for_file(path):
+    video_info = get_video_info(path)
+
+    audio_streams = []
+
+    if "streams" in video_info:
+        audio_streams = [s for s in video_info["streams"] if s["codec_type"] == "audio"]
+
+    return audio_streams
+
+
 with click.open_file("config.yml") as cfg_file:
     cfg.update(load_config(cfg_file))
 
@@ -37,37 +77,22 @@ else:
 
 logging.getLogger(__name__).info("Hello")
 
-
-directories = [pathlib.Path(d) for d in get_config_value("directories", [])]
-globs = ["**/*.{0}".format(e) for e in get_config_value("extensions", ["avi"])]
-
-video_files = []
-for directory in directories:
-    logging.info("Searching directory: {0}".format(directory))
-    for glob in globs:
-        video_files.extend(directory.glob(glob))
+video_files = get_video_paths()
 
 logging.root.info("Found {0} files to check".format(len(video_files)))
 
-options = [
-    "-v", "quiet",
-    "-print_format", "json",
-    "-show_format",
-    "-show_streams"
-]
+# audio_streams = get_audio_streams_for_file(video_files[0])
+#
+# print(audio_streams)
+# print([a["codec_name"] for a in audio_streams])
 
 
-child = pexpect.spawnu("ffprobe", options + [str(video_files[0])], logfile=sys.stdout)
-child.expect(pexpect.EOF)
-ffprobe_json = child.before
-video_info = json.loads(ffprobe_json)
+video_info = get_video_info(video_files[0])
 
-audio_streams = []
+print(video_info)
 
-if "streams" in video_info:
-    audio_streams = [s for s in video_info["streams"] if s["codec_type"] == "audio"]
+# 1) first audio stream is aac
 
-print([a["codec_name"] for a in audio_streams])
 
 # container = av.open("/home/cody/Downloads/The Intouchables 2011 720p BluRay x264 French AAC - Ozlem/The Intouchables 2011 720p BluRay x264 French AAC - Ozlem.mp4")
 #
