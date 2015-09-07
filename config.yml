@@ -1,3 +1,11 @@
+directories:
+  - /home/cody/Downloads
+
+extensions:
+  - mp4
+  - avi
+  - mpv
+
 logging:
   version: 1
   formatters:
