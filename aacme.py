@@ -5,10 +5,11 @@ import pathlib
 import sys
 import pexpect
 import yaml
-import click
+import io
+# import click
 import collections
 import io
-import av
+# import av
 
 __author__ = 'cody'
 
@@ -67,11 +68,20 @@ def get_audio_streams_for_file(path):
     return audio_streams
 
 
-with click.open_file("config.yml") as cfg_file:
+def build_ffmpeg_args(video_info):
+    # http://ffmpeg.org/ffmpeg.html#Advanced-options
+    # https://trac.ffmpeg.org/wiki/How%20to%20use%20-map%20option
+
+    # build output map
+
+    pass
+
+with io.open("config.yml") as cfg_file:
     cfg.update(load_config(cfg_file))
 
 if "logging" not in cfg:
-    click.secho("No logging configuration found", fg="red")
+    # click.secho("No logging configuration found", fg="red")
+    print("No logging configuration found")
 else:
     configure_logging(cfg["logging"])
 
@@ -91,7 +101,15 @@ video_info = get_video_info(video_files[0])
 
 print(video_info)
 
+# collect audio streams
+audio_streams = [s for s in video_info.get("streams", []) if s.get("codec_type", "").lower() == "audio"]
+
 # 1) first audio stream is aac
+if not len(audio_streams) or audio_streams[0].get("codec_name", "").lower() == "aac":
+    # TODO: exit?
+    pass
+
+
 
 
 # container = av.open("/home/cody/Downloads/The Intouchables 2011 720p BluRay x264 French AAC - Ozlem/The Intouchables 2011 720p BluRay x264 French AAC - Ozlem.mp4")
