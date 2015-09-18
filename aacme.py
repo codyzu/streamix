@@ -14,6 +14,7 @@ import io
 __author__ = 'cody'
 
 cfg = {}
+logger = logging.root
 
 
 def configure_logging(logging_cfg):
@@ -43,38 +44,124 @@ def get_video_paths():
     return video_files
 
 
-def get_video_info(path):
-    options = [
-        "-v", "quiet",
-        "-print_format", "json",
-        "-show_format",
-        "-show_streams"
-    ]
+class FileProcessor(object):
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.file_info = FileProcessor.read_file_info(file_path)
+        self.streams = self.file_info.get("streams", [])
+        self.audio_streams = self.find(is_audio)
+        self.video_streams = self.find(is_video)
 
-    child = pexpect.spawnu("ffprobe", options + [str(path)], logfile=sys.stdout)
-    child.expect(pexpect.EOF)
-    ffprobe_json = child.before
-    return json.loads(ffprobe_json)
+    @staticmethod
+    def read_file_info(file_path):
+        options = [
+            "-v", "quiet",
+            "-print_format", "json",
+            "-show_format",
+            "-show_streams"
+        ]
+
+        child = pexpect.spawnu("ffprobe", options + [str(file_path)], logfile=sys.stdout)
+        child.expect(pexpect.EOF)
+        ffprobe_json = child.before
+        return json.loads(ffprobe_json)
+
+    @staticmethod
+    def _apply_filters(stream, filters):
+        for f in filters:
+            if not f(stream):
+                return False
+
+        return True
+
+    def find(self, *filters):
+        return [s for s in self.streams if self._apply_filters(s, filters)]
+
+    def first(self, *filters):
+        return next(self.find(*filters), None)
+
+    def find_new_first_audio(self):
+        # no audio streams
+        if len(self.audio_streams) == 0:
+            return None
+
+        # first audio stream is aac/eng
+        if is_english_audio(self.audio_streams[0]) and is_aac_audio(self.audio_streams[0]):
+            logger.info("first stream is eng/aac")
+            return
+
+        # find first aac/eng
+        stream = self.first(is_aac_audio, is_english_audio)
+        if stream is not None:
+            return stream
+
+        # find first eng
+        stream = self.first(is_english_audio)
+        if stream is not None:
+            return stream
+
+        # first aac
+        stream = self.first(is_aac_audio)
+        if stream is not None:
+            return stream
+
+        # last resort, first audio
+        return self.first(is_audio)
+
+    def build_ffmpeg_args(self, first_audio):
+        if first_audio is None:
+            logger.info("no audio stream found")
+            return
+
+        all_audio_streams = self.find(is_audio)
+
+        if first_audio == all_audio_streams[0]:
+            logger.info("fist audio stream is already eng/aac")
+            return
+
+        
 
 
-def get_audio_streams_for_file(path):
-    video_info = get_video_info(path)
+# Stream filters
+def is_aac_audio(stream):
+    if not is_audio(stream):
+        return False
 
-    audio_streams = []
+    if stream.get("codec_name", "").lower() == "aac":
+        return True
 
-    if "streams" in video_info:
-        audio_streams = [s for s in video_info["streams"] if s["codec_type"] == "audio"]
-
-    return audio_streams
+    return False
 
 
-def build_ffmpeg_args(video_info):
+def is_english_audio(stream):
+    if not is_audio(stream):
+        return False
+
+    if stream.get("tags", {}).get("language", "").lower() == "eng":
+        return True
+
+    return False
+
+
+def is_video(stream):
+    return stream.get("codec_type", "").lower() == "video"
+
+
+def is_audio(stream):
+    return stream.get("codec_type", "").lower() == "audio"
+
+
+def build_ffmpeg_args(video_info, first_audio):
     # http://ffmpeg.org/ffmpeg.html#Advanced-options
     # https://trac.ffmpeg.org/wiki/How%20to%20use%20-map%20option
 
     # build output map
 
+    # copy all video streams
+    video_streams = [s for s in video_info.get("streams", []) if is_video(s)]
+
     pass
+
 
 with io.open("config.yml") as cfg_file:
     cfg.update(load_config(cfg_file))
@@ -102,12 +189,13 @@ video_info = get_video_info(video_files[0])
 print(video_info)
 
 # collect audio streams
-audio_streams = [s for s in video_info.get("streams", []) if s.get("codec_type", "").lower() == "audio"]
+audio_streams = [s for s in video_info.get("streams", []) if is_audio(s)]
 
-# 1) first audio stream is aac
-if not len(audio_streams) or audio_streams[0].get("codec_name", "").lower() == "aac":
-    # TODO: exit?
-    pass
+
+
+
+
+
 
 
 
