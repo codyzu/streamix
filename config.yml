@@ -1,9 +1,12 @@
-
+#######
 # Debug
 #######
 # enable this line to not actually run ffmpeg (only log the commands that would be executed)
 #dry-run: True
 
+
+
+###############
 # File scanning
 ###############
 
@@ -21,7 +24,7 @@ extensions:
 
 
 
-
+#########
 # ffmpgeg
 #########
 
@@ -37,7 +40,7 @@ encode_timeout_mins: 240
 
 
 
-
+#########
 # logging
 #########
 logging:
