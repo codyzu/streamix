@@ -17,6 +17,10 @@ cfg = {}
 logger = logging.root
 
 
+# http://ffmpeg.org/ffmpeg.html#Advanced-options
+# https://trac.ffmpeg.org/wiki/How%20to%20use%20-map%20option
+
+
 def configure_logging(logging_cfg):
     logging.config.dictConfig(logging_cfg)
 
@@ -45,12 +49,24 @@ def get_video_paths():
 
 
 class FileProcessor(object):
-    def __init__(self, file_path):
+    def __init__(self, file_path, cfg):
         self.file_path = file_path
         self.file_info = FileProcessor.read_file_info(file_path)
         self.streams = self.file_info.get("streams", [])
-        self.audio_streams = self.find(is_audio)
-        self.video_streams = self.find(is_video)
+        self.audio_streams = self._find(is_audio)
+        self.video_streams = self._find(is_video)
+        self.cfg = cfg
+
+    def process(self):
+        target_audio_stream = self._find_new_first_audio()
+        new_stream_order = self._create_new_stream_order(target_audio_stream)
+
+        # stop now if there is nothing to change
+        if new_stream_order is None:
+            return
+
+        ffmpeg_params = self._build_ffmpeg_params(new_stream_order, target_audio_stream)
+        print(ffmpeg_params)
 
     @staticmethod
     def read_file_info(file_path):
@@ -61,7 +77,7 @@ class FileProcessor(object):
             "-show_streams"
         ]
 
-        child = pexpect.spawnu("ffprobe", options + [str(file_path)], logfile=sys.stdout)
+        child = pexpect.spawnu("ffprobe", options + [str(file_path)])
         child.expect(pexpect.EOF)
         ffprobe_json = child.before
         return json.loads(ffprobe_json)
@@ -74,50 +90,80 @@ class FileProcessor(object):
 
         return True
 
-    def find(self, *filters):
+    def _find(self, *filters):
         return [s for s in self.streams if self._apply_filters(s, filters)]
 
-    def first(self, *filters):
-        return next(self.find(*filters), None)
+    def _first(self, *filters):
+        filtered = self._find(*filters)
+        return filtered[0] if len(filtered) > 0 else None
 
-    def find_new_first_audio(self):
-        # no audio streams
-        if len(self.audio_streams) == 0:
-            return None
-
-        # first audio stream is aac/eng
-        if is_english_audio(self.audio_streams[0]) and is_aac_audio(self.audio_streams[0]):
-            logger.info("first stream is eng/aac")
-            return
-
+    def _find_new_first_audio(self):
         # find first aac/eng
-        stream = self.first(is_aac_audio, is_english_audio)
+        stream = self._first(is_aac_audio, is_english_audio)
         if stream is not None:
             return stream
 
         # find first eng
-        stream = self.first(is_english_audio)
+        stream = self._first(is_english_audio)
         if stream is not None:
             return stream
 
         # first aac
-        stream = self.first(is_aac_audio)
+        stream = self._first(is_aac_audio)
         if stream is not None:
             return stream
 
         # last resort, first audio
-        return self.first(is_audio)
+        return self._first(is_audio)
 
-    def build_ffmpeg_args(self, first_audio):
+    def _create_new_stream_order(self, first_audio):
         if first_audio is None:
             logger.info("no audio stream found")
             return
 
-        all_audio_streams = self.find(is_audio)
+        all_audio_streams = self._find(is_audio)
 
         if first_audio == all_audio_streams[0]:
             logger.info("fist audio stream is already eng/aac")
             return
+
+        current_first_audio_stream = all_audio_streams[0]
+
+        new_stream_order = []
+        for s in self.streams:
+            # when we reach the new first audio, skip it
+            if s == first_audio:
+                continue
+
+            # when we reach the current first audio, add the new first audio, just before
+            if s == current_first_audio_stream:
+                new_stream_order.append(first_audio)
+
+            # add the stream
+            new_stream_order.append(s)
+
+        return new_stream_order
+
+    def _out_param_for_stream(self, current_stream, first_audio, index):
+        if current_stream == first_audio and not is_aac_audio(first_audio):
+            return "-c:{index} aac -b:{index} 320k".format(index=index)
+        else:
+            return "-c:{index} copy".format(index=index)
+
+
+    def _build_ffmpeg_params(self, new_stream_order, first_audio):
+        in_params = []
+        for s in new_stream_order:
+            in_params.append("-map 0:{0}".format(s["index"]))
+
+        out_params = []
+        for index, s in enumerate(new_stream_order):
+            out_params.append(self._out_param_for_stream(s, first_audio, index))
+
+        return "ffmpeg -strict experimental {ins} {outs}".format(ins=" ".join(in_params),outs= " ".join(out_params))
+
+
+
 
         
 
@@ -151,16 +197,10 @@ def is_audio(stream):
     return stream.get("codec_type", "").lower() == "audio"
 
 
-def build_ffmpeg_args(video_info, first_audio):
-    # http://ffmpeg.org/ffmpeg.html#Advanced-options
-    # https://trac.ffmpeg.org/wiki/How%20to%20use%20-map%20option
+def is_not(filter):
+    return lambda s: not filter(s)
 
-    # build output map
 
-    # copy all video streams
-    video_streams = [s for s in video_info.get("streams", []) if is_video(s)]
-
-    pass
 
 
 with io.open("config.yml") as cfg_file:
@@ -172,42 +212,13 @@ if "logging" not in cfg:
 else:
     configure_logging(cfg["logging"])
 
-logging.getLogger(__name__).info("Hello")
-
 video_files = get_video_paths()
 
 logging.root.info("Found {0} files to check".format(len(video_files)))
 
-# audio_streams = get_audio_streams_for_file(video_files[0])
-#
-# print(audio_streams)
-# print([a["codec_name"] for a in audio_streams])
-
-
-video_info = get_video_info(video_files[0])
-
-print(video_info)
-
-# collect audio streams
-audio_streams = [s for s in video_info.get("streams", []) if is_audio(s)]
-
-
-
-
-
-
-
-
-
-
-# container = av.open("/home/cody/Downloads/The Intouchables 2011 720p BluRay x264 French AAC - Ozlem/The Intouchables 2011 720p BluRay x264 French AAC - Ozlem.mp4")
-#
-#
-# for stream in container.streams:
-#     if isinstance(stream, av.audio.stream.AudioStream):
-#         print(stream.format)
-#
-# print("hello")
+for v in video_files:
+    processor = FileProcessor(v, cfg)
+    processor.process()
 
 
 """
