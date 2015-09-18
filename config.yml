@@ -1,10 +1,15 @@
 
+# Debug
+#######
+# enable this line to not actually run ffmpeg (only log the commands that would be executed)
+#dry-run: True
+
 # File scanning
 ###############
 
 # directories to search
 directories:
-  - /home/cody/dev/python/aacme
+  - /home/cody/dev/python/aacme/test_files
 #  - /home/cody/Downloads
 
 # the file extensions to process

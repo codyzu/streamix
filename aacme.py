@@ -2,23 +2,19 @@ import json
 import logging
 import logging.config
 import pathlib
-import sys
+import os
 import pexpect
 import yaml
 import io
-# import click
-import collections
-import io
-# import av
 
 __author__ = 'cody'
 
-cfg = {}
-logger = logging.root
-
-
 # http://ffmpeg.org/ffmpeg.html#Advanced-options
 # https://trac.ffmpeg.org/wiki/How%20to%20use%20-map%20option
+
+# global variables
+cfg = {}
+logger = logging.root
 
 
 def configure_logging(logging_cfg):
@@ -29,35 +25,33 @@ def load_config(cfg_file):
     return yaml.load(cfg_file)
 
 
-def get_config_value(key, default=None):
-    if key in cfg:
-        return cfg[key]
-    return default
+def collect_canditate_files():
+    """Scan the directories for all matchig files"""
+    directories = [pathlib.Path(d) for d in cfg.get("directories", [])]
+    globs = ["*.{0}".format(e) for e in cfg.get("extensions", ["avi"])]
 
-
-def get_video_paths():
-    directories = [pathlib.Path(d) for d in get_config_value("directories", [])]
-    globs = ["**/*.{0}".format(e) for e in get_config_value("extensions", ["avi"])]
-
-    video_files = []
+    matching_files = []
     for directory in directories:
         logging.info("Searching directory: {0}".format(directory))
         for glob in globs:
-            video_files.extend(directory.glob(glob))
+            matching_files.extend(directory.rglob(glob))
 
-    return video_files
+    return matching_files
 
 
 class FileProcessor(object):
-    def __init__(self, file_path, cfg):
+    """Determines if a file should be processed and builds the ffmpeg command to process the file"""
+
+    def __init__(self, file_path: pathlib.Path, cfg: dict):
         self.file_path = file_path
-        self.file_info = FileProcessor.read_file_info(file_path)
-        self.streams = self.file_info.get("streams", [])
-        self.audio_streams = self._find(is_audio)
-        self.video_streams = self._find(is_video)
+        self.streams = []
         self.cfg = cfg
 
-    def process(self):
+    def process(self) -> str:
+        """Read the file streams and build the ffmpeg command to transform the file (if required)
+        """
+        file_info = self.read_file_info()
+        self.streams = file_info.get("streams", [])
         target_audio_stream = self._find_new_first_audio()
         new_stream_order = self._create_new_stream_order(target_audio_stream)
 
@@ -65,21 +59,12 @@ class FileProcessor(object):
         if new_stream_order is None:
             return
 
-        ffmpeg_params = self._build_ffmpeg_params(new_stream_order, target_audio_stream)
-        print(ffmpeg_params)
+        return self._build_ffmpeg_params(new_stream_order, target_audio_stream)
 
-    @staticmethod
-    def read_file_info(file_path):
-        options = [
-            "-v", "quiet",
-            "-print_format", "json",
-            "-show_format",
-            "-show_streams"
-        ]
+    def read_file_info(self):
+        ffprobe_cmd = "ffprobe -v quiet -print_format json -show_format -show_streams {0}".format(self.file_path)
 
-        child = pexpect.spawnu("ffprobe", options + [str(file_path)])
-        child.expect(pexpect.EOF)
-        ffprobe_json = child.before
+        ffprobe_json, code = pexpect.runu(ffprobe_cmd, timeout=30, withexitstatus=True)
         return json.loads(ffprobe_json)
 
     @staticmethod
@@ -118,13 +103,13 @@ class FileProcessor(object):
 
     def _create_new_stream_order(self, first_audio):
         if first_audio is None:
-            logger.info("no audio stream found")
+            logger.debug("no audio stream found")
             return
 
         all_audio_streams = self._find(is_audio)
 
         if first_audio == all_audio_streams[0]:
-            logger.info("fist audio stream is already eng/aac")
+            logger.debug("fist audio stream is already eng/aac")
             return
 
         current_first_audio_stream = all_audio_streams[0]
@@ -150,7 +135,6 @@ class FileProcessor(object):
         else:
             return "-c:{index} copy".format(index=index)
 
-
     def _build_ffmpeg_params(self, new_stream_order, first_audio):
         in_params = []
         for s in new_stream_order:
@@ -160,12 +144,52 @@ class FileProcessor(object):
         for index, s in enumerate(new_stream_order):
             out_params.append(self._out_param_for_stream(s, first_audio, index))
 
-        return "ffmpeg -strict experimental {ins} {outs}".format(ins=" ".join(in_params),outs= " ".join(out_params))
+        return "ffmpeg -i {input} {ins} {outs} {extra} {output}".format(input=str(self.file_path),
+                                                                        ins=" ".join(in_params),
+                                                                        outs=" ".join(out_params),
+                                                                        extra=cfg.get("extra_encode_params", ""),
+                                                                        output=self.temp_file_name)
+
+    @property
+    def temp_file_name(self):
+        return self.file_path.with_suffix(".tmp{0}".format(self.file_path.suffix))
 
 
+class FfmpegRunner:
+    def __init__(self, ffmpeg_command: str, file_processor: FileProcessor):
+        self.ffmpeg_command = ffmpeg_command
+        self.file_processor = file_processor
 
+    def run(self):
+        timeout_sec = cfg.get("encode_timeout_mins", None)
+        if timeout_sec is not None:
+            timeout_sec *= 60
 
-        
+        # stop now if dry run set
+        if cfg.get("dry-run", False):
+            logger.warning("Skipping (dry-run): {0}".format(self.ffmpeg_command))
+            return
+
+        logger.info("Executing: {0}".format(self.ffmpeg_command))
+
+        try:
+            output, code = pexpect.runu(self.ffmpeg_command, timeout=timeout_sec, withexitstatus=True)
+        except Exception as e:
+            logger.exception("Failed to encode file: {0}".format(self.file_processor.file_path))
+
+            # delete any temp file
+            if self.file_processor.temp_file_name.is_file():
+                logger.warning("Cleaning up file: {0}".format(self.file_processor.temp_file_name))
+                os.remove(str(self.file_processor.temp_file_name))
+        else:
+            if code != 0:
+                logger.error(output)
+                return
+            else:
+                logger.debug(output)
+
+            os.rename(str(self.file_processor.temp_file_name), str(self.file_processor.file_path))
+            logger.info("Successfully re-encoded: {0}".format(self.file_processor.file_path))
 
 
 # Stream filters
@@ -201,24 +225,30 @@ def is_not(filter):
     return lambda s: not filter(s)
 
 
-
-
+# main logic
 with io.open("config.yml") as cfg_file:
     cfg.update(load_config(cfg_file))
 
 if "logging" not in cfg:
-    # click.secho("No logging configuration found", fg="red")
     print("No logging configuration found")
 else:
     configure_logging(cfg["logging"])
 
-video_files = get_video_paths()
+video_files = collect_canditate_files()
 
-logging.root.info("Found {0} files to check".format(len(video_files)))
+logging.root.debug("Checking {0} files".format(len(video_files)))
 
+ffmppeg_runners = []
 for v in video_files:
     processor = FileProcessor(v, cfg)
-    processor.process()
+    cmd = processor.process()
+    if cmd is not None:
+        ffmppeg_runners.append(FfmpegRunner(cmd, processor))
+
+logger.info("{0} files queued for processing".format(len(ffmppeg_runners)))
+
+for r in ffmppeg_runners:
+    r.run()
 
 
 """
