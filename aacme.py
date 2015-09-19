@@ -252,6 +252,10 @@ for r in ffmppeg_runners:
 
 
 """
+todo: make bit rate "minbitrate"
+todo: add stream priority based on codec
+
+
 To review the logic: if 1st audio stream aac, then do nothing
 if another audio stream is aac, move it to the first
 if its english aac
