@@ -2,7 +2,7 @@
 # Debug
 #######
 # enable this line to not actually run ffmpeg (only log the commands that would be executed)
-#dry-run: True
+dry-run: True
 
 
 
@@ -21,6 +21,7 @@ extensions:
   - avi
   - mpv
   - mkv
+  - divx
 
 
 
@@ -28,9 +29,20 @@ extensions:
 # ffmpgeg
 #########
 
-# set the new codec name and bitrate
+# when choose between streams fo re-encode to aac, the following describes how the stream is choosen:
+# choose the eng stream with the highest priority from the list
+# if no eng streams exist (or cannot be determined) choose the stream with the highest priority the list
+# choose the stream with the lowest index (the first audio stream)
+audio_codec_priority:
+  - dts
+  - flac
+  - pcm_dvd
+  - ac3
+
+# the choosen stream will be encoded using this codec
 audio_codec: aac
-audio_bitrate: 320k
+# and a minimum of this bitrate (streams at higher bitrate will keep there current bitrate)
+audio_min_bitrate: 320000
 
 # add any extra encoding params to add on to the end of the command
 extra_encode_params: '-strict experimental'
