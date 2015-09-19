@@ -18,18 +18,30 @@ cfg = {}
 logger = logging.root
 
 
-def configure_logging(logging_cfg):
-    logging.config.dictConfig(logging_cfg)
+def load_config():
+    try:
+        with io.open("config.yml") as cfg_file:
+            cfg.update(yaml.load(cfg_file))
+    except Exception as e:
+        print("Failed to load config: {0}".format(str(e)))
 
 
-def load_config(cfg_file):
-    return yaml.load(cfg_file)
+def configure_logging():
+    if "logging" not in cfg:
+        print("No logging configuration found")
+        exit()
+    else:
+        try:
+            logging.config.dictConfig(cfg["logging"])
+        except Exception as e:
+            print("Failed to configre logging: {0}".format(str(e)))
+            exit()
 
 
 def collect_canditate_files():
     """Scan the directories for all matchig files"""
     directories = [pathlib.Path(d) for d in cfg.get("directories", [])]
-    globs = ["*.{0}".format(e) for e in cfg.get("extensions", ["avi"])]
+    globs = ["*.{0}".format(e) for e in cfg.get("extensions", [])]
 
     matching_files = []
     for directory in directories:
@@ -45,34 +57,36 @@ class StreamChooser:
     def __init__(self, streams):
         self.streams = streams
         self.finder = StreamFinder(streams)
+        self.codec_priority = cfg.get("audio_codec_priority", [])
 
     def choose(self):
-        # find first aac/eng
-        stream = self.finder.first(self.finder.is_aac_audio, self.finder.is_english_audio)
-        if stream is not None:
-            return stream
+        # collect the audio streams
+        audio_streams = self.finder.all_audio()
 
-        # find first eng
-        stream = self.finder.first(self.finder.is_english_audio)
-        if stream is not None:
-            return stream
+        # search for the highest priority english stream
+        eng_streams = self.finder.find(StreamFinder.is_audio, StreamFinder.is_eng)
+        s = self._choose_by_priority(eng_streams)
+        if s is not None:
+            return s
 
-        # first aac
-        stream = self.finder.first(self.finder.is_aac_audio)
-        if stream is not None:
-            return stream
+        # search for the highest priority stream
+        return self._choose_by_priority(audio_streams)
 
-        # last resort, first audio
-        return self.finder.first(self.finder.is_audio)
+    def _choose_by_priority(self, streams):
+        for c in self.codec_priority:
+            stream = next((s for s in streams if s.get("codec_name", "").lower() == c.lower()), None)
+            if stream is not None:
+                return stream
+
+        return streams[0] if len(streams) > 0 else None
 
 
 class FileProcessor(object):
     """Determines if a file should be processed and builds the ffmpeg command to process the file"""
 
-    def __init__(self, file_path: pathlib.Path, cfg: dict):
+    def __init__(self, file_path: pathlib.Path):
         self.file_path = file_path
         self.streams = []
-        self.cfg = cfg
         self.finder = StreamFinder([])
 
     def process(self) -> str:
@@ -93,7 +107,7 @@ class FileProcessor(object):
         return self._build_ffmpeg_params(new_stream_order, target_audio_stream)
 
     def read_file_info(self):
-        ffprobe_cmd = "ffprobe -v quiet -print_format json -show_format -show_streams {0}".format(self.file_path)
+        ffprobe_cmd = "ffprobe -v quiet -print_format json -show_format -show_streams \"{0}\"".format(self.file_path)
 
         ffprobe_json, code = pexpect.runu(ffprobe_cmd, timeout=30, withexitstatus=True)
         return json.loads(ffprobe_json)
@@ -129,7 +143,6 @@ class FileProcessor(object):
     def _out_param_for_stream(self, current_stream, first_audio, index):
         if current_stream == first_audio and not StreamFinder.is_aac_audio(first_audio):
             min_bit_rate = cfg.get("audio_min_bitrate", 320000)
-            # TODO error handling for integer parsing
             current_bit_rate = int(first_audio.get("bit_rate", "0"))
             new_bit_rate = max([min_bit_rate, current_bit_rate])
             return "-c:{index} aac -b:{index} {bitrate}".format(index=index, bitrate=new_bit_rate)
@@ -145,11 +158,11 @@ class FileProcessor(object):
         for index, s in enumerate(new_stream_order):
             out_params.append(self._out_param_for_stream(s, first_audio, index))
 
-        return "ffmpeg -i {input} {ins} {outs} {extra} {output}".format(input=str(self.file_path),
-                                                                        ins=" ".join(in_params),
-                                                                        outs=" ".join(out_params),
-                                                                        extra=cfg.get("extra_encode_params", ""),
-                                                                        output=self.temp_file_name)
+        return "ffmpeg -i \"{input}\" {ins} {outs} {extra} \"{output}\"".format(input=str(self.file_path),
+                                                                                ins=" ".join(in_params),
+                                                                                outs=" ".join(out_params),
+                                                                                extra=cfg.get("extra_encode_params", ""),
+                                                                                output=self.temp_file_name)
 
     @property
     def temp_file_name(self):
@@ -234,10 +247,11 @@ class StreamFinder:
         if not StreamFinder.is_audio(stream):
             return False
 
-        if stream.get("tags", {}).get("language", "").lower() == "eng":
-            return True
+        return StreamFinder.is_eng(stream)
 
-        return False
+    @staticmethod
+    def is_eng(stream):
+        return stream.get("tags", {}).get("language", "").lower() == "eng"
 
     @staticmethod
     def is_video(stream):
@@ -248,18 +262,12 @@ class StreamFinder:
         return stream.get("codec_type", "").lower() == "audio"
 
     @staticmethod
-    def is_not(filter):
-        return lambda s: not filter(s)
+    def is_not(f):
+        return lambda s: not f(s)
 
 
-# main logic
-with io.open("config.yml") as cfg_file:
-    cfg.update(load_config(cfg_file))
-
-if "logging" not in cfg:
-    print("No logging configuration found")
-else:
-    configure_logging(cfg["logging"])
+load_config()
+configure_logging()
 
 video_files = collect_canditate_files()
 
@@ -267,7 +275,7 @@ logging.root.debug("Checking {0} files".format(len(video_files)))
 
 ffmppeg_runners = []
 for v in video_files:
-    processor = FileProcessor(v, cfg)
+    processor = FileProcessor(v)
     cmd = processor.process()
     if cmd is not None:
         ffmppeg_runners.append(FfmpegRunner(cmd, processor))
@@ -279,10 +287,6 @@ for r in ffmppeg_runners:
 
 
 """
-todo: make bit rate "minbitrate"
-todo: add stream priority based on codec
-
-
 To review the logic: if 1st audio stream aac, then do nothing
 if another audio stream is aac, move it to the first
 if its english aac
@@ -297,4 +301,8 @@ This default I use for aac conversation
 -strict experimental -c:a aac -b:a 240k
 320 i mean
 -strict experimental -c:a aac -b:a 320k
+
+make bit rate "minbitrate"
+add stream priority based on codec
+
 """
