@@ -7,6 +7,7 @@ import pexpect
 import yaml
 import io
 
+__version__ = "0.2"
 __author__ = 'cody'
 
 # http://ffmpeg.org/ffmpeg.html#Advanced-options
@@ -36,7 +37,33 @@ def collect_canditate_files():
         for glob in globs:
             matching_files.extend(directory.rglob(glob))
 
-    return matching_files
+    # sort the file list so it looks logical in the logs
+    return sorted(matching_files)
+
+
+class StreamChooser:
+    def __init__(self, streams):
+        self.streams = streams
+        self.finder = StreamFinder(streams)
+
+    def choose(self):
+        # find first aac/eng
+        stream = self.finder.first(self.finder.is_aac_audio, self.finder.is_english_audio)
+        if stream is not None:
+            return stream
+
+        # find first eng
+        stream = self.finder.first(self.finder.is_english_audio)
+        if stream is not None:
+            return stream
+
+        # first aac
+        stream = self.finder.first(self.finder.is_aac_audio)
+        if stream is not None:
+            return stream
+
+        # last resort, first audio
+        return self.finder.first(self.finder.is_audio)
 
 
 class FileProcessor(object):
@@ -46,19 +73,23 @@ class FileProcessor(object):
         self.file_path = file_path
         self.streams = []
         self.cfg = cfg
+        self.finder = StreamFinder([])
 
     def process(self) -> str:
         """Read the file streams and build the ffmpeg command to transform the file (if required)
         """
+        logger.debug("Reading: {0}".format(self.file_path))
         file_info = self.read_file_info()
         self.streams = file_info.get("streams", [])
-        target_audio_stream = self._find_new_first_audio()
+        self.finder.streams = self.streams
+        target_audio_stream = StreamChooser(self.streams).choose()
         new_stream_order = self._create_new_stream_order(target_audio_stream)
 
         # stop now if there is nothing to change
         if new_stream_order is None:
             return
 
+        logger.debug("Queued for processing")
         return self._build_ffmpeg_params(new_stream_order, target_audio_stream)
 
     def read_file_info(self):
@@ -67,46 +98,12 @@ class FileProcessor(object):
         ffprobe_json, code = pexpect.runu(ffprobe_cmd, timeout=30, withexitstatus=True)
         return json.loads(ffprobe_json)
 
-    @staticmethod
-    def _apply_filters(stream, filters):
-        for f in filters:
-            if not f(stream):
-                return False
-
-        return True
-
-    def _find(self, *filters):
-        return [s for s in self.streams if self._apply_filters(s, filters)]
-
-    def _first(self, *filters):
-        filtered = self._find(*filters)
-        return filtered[0] if len(filtered) > 0 else None
-
-    def _find_new_first_audio(self):
-        # find first aac/eng
-        stream = self._first(is_aac_audio, is_english_audio)
-        if stream is not None:
-            return stream
-
-        # find first eng
-        stream = self._first(is_english_audio)
-        if stream is not None:
-            return stream
-
-        # first aac
-        stream = self._first(is_aac_audio)
-        if stream is not None:
-            return stream
-
-        # last resort, first audio
-        return self._first(is_audio)
-
     def _create_new_stream_order(self, first_audio):
         if first_audio is None:
             logger.debug("no audio stream found")
             return
 
-        all_audio_streams = self._find(is_audio)
+        all_audio_streams = self.finder.find(StreamFinder.is_audio)
 
         if first_audio == all_audio_streams[0]:
             logger.debug("fist audio stream is already eng/aac")
@@ -130,8 +127,12 @@ class FileProcessor(object):
         return new_stream_order
 
     def _out_param_for_stream(self, current_stream, first_audio, index):
-        if current_stream == first_audio and not is_aac_audio(first_audio):
-            return "-c:{index} aac -b:{index} 320k".format(index=index)
+        if current_stream == first_audio and not StreamFinder.is_aac_audio(first_audio):
+            min_bit_rate = cfg.get("audio_min_bitrate", 320000)
+            # TODO error handling for integer parsing
+            current_bit_rate = int(first_audio.get("bit_rate", "0"))
+            new_bit_rate = max([min_bit_rate, current_bit_rate])
+            return "-c:{index} aac -b:{index} {bitrate}".format(index=index, bitrate=new_bit_rate)
         else:
             return "-c:{index} copy".format(index=index)
 
@@ -192,37 +193,63 @@ class FfmpegRunner:
             logger.info("Successfully re-encoded: {0}".format(self.file_processor.file_path))
 
 
-# Stream filters
-def is_aac_audio(stream):
-    if not is_audio(stream):
-        return False
+class StreamFinder:
+    def __init__(self, streams):
+        self.streams = streams
 
-    if stream.get("codec_name", "").lower() == "aac":
+    def find(self, *filters):
+        return [s for s in self.streams if self._apply_filters(s, filters)]
+
+    def first(self, *filters):
+        filtered = self.find(*filters)
+        return filtered[0] if len(filtered) > 0 else None
+
+    def all_audio(self):
+        return self.find(StreamFinder.is_audio)
+
+    def first_audio(self):
+        all_audio_streams = self.all_audio()
+        return all_audio_streams[0] if len(all_audio_streams) > 0 else None
+
+    @staticmethod
+    def _apply_filters(stream, filters):
+        for f in filters:
+            if not f(stream):
+                return False
         return True
 
-    return False
+    # Stream filters
+    @staticmethod
+    def is_aac_audio(stream):
+        if not StreamFinder.is_audio(stream):
+            return False
 
+        if stream.get("codec_name", "").lower() == "aac":
+            return True
 
-def is_english_audio(stream):
-    if not is_audio(stream):
         return False
 
-    if stream.get("tags", {}).get("language", "").lower() == "eng":
-        return True
+    @staticmethod
+    def is_english_audio(stream):
+        if not StreamFinder.is_audio(stream):
+            return False
 
-    return False
+        if stream.get("tags", {}).get("language", "").lower() == "eng":
+            return True
 
+        return False
 
-def is_video(stream):
-    return stream.get("codec_type", "").lower() == "video"
+    @staticmethod
+    def is_video(stream):
+        return stream.get("codec_type", "").lower() == "video"
 
+    @staticmethod
+    def is_audio(stream):
+        return stream.get("codec_type", "").lower() == "audio"
 
-def is_audio(stream):
-    return stream.get("codec_type", "").lower() == "audio"
-
-
-def is_not(filter):
-    return lambda s: not filter(s)
+    @staticmethod
+    def is_not(filter):
+        return lambda s: not filter(s)
 
 
 # main logic
