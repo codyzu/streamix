@@ -7,3 +7,5 @@ aacme.log
 *.divx
 *.log.*
 aacme/*
+release/
+__pycache__/
