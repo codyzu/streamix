@@ -7,7 +7,7 @@ import pexpect
 import yaml
 import io
 
-__version__ = "0.5"
+__version__ = "0.6"
 __author__ = 'cody'
 
 # http://ffmpeg.org/ffmpeg.html#Advanced-options
@@ -99,9 +99,9 @@ class FileProcessor(object):
         self.finder.streams = self.streams
         selected_stream = StreamChooser(self.streams).choose()
 
-        # stop now if re-encoding is not required
-        if not self._requires_encoding(selected_stream):
-            logger.debug("no need to re-encode")
+        # stop now if ffmpeg is not required
+        if not self._requires_ffmpeg(selected_stream):
+            logger.debug("no need to execute ffmpeg")
             return
 
         logger.debug("queued for processing")
@@ -114,50 +114,51 @@ class FileProcessor(object):
         ffprobe_json, code = pexpect.runu(ffprobe_cmd, timeout=30, withexitstatus=True)
         return json.loads(ffprobe_json)
 
-    def _requires_encoding(self, selected_stream):
+    def _requires_ffmpeg(self, selected_stream):
         # if no stream was selected, it indicates no audio streams were found
         if selected_stream is None:
             logger.debug("no audio streams found")
             return False
 
-        # if the stream is the first AND already aac, we don't need to re-encode
+        # if the stream is the first AND already aac, we don't need to execute ffmpeg
         if selected_stream == self.finder.find(StreamFinder.is_audio)[0] and StreamFinder.is_aac(selected_stream):
-            logger.debug("the chosen stream is aleady the first audio stream and encoded in aac")
+            logger.debug("the chosen stream is already the first audio stream and encoded in aac")
             return False
 
         return True
 
+    def _requires_encode(self, selected_stream):
+        return not self.finder.is_aac(selected_stream)
+
     def _create_new_stream_order(self, selected_stream):
 
         all_audio_streams = self.finder.find(StreamFinder.is_audio)
-
-        # if the selected stream is already the fist audio stream, we don't need to change the order
-        if selected_stream == all_audio_streams[0]:
-            return self.streams
-
+        will_encode = self._requires_encode(selected_stream)
         current_first_audio_stream = all_audio_streams[0]
         new_stream_order = []
 
         for s in self.streams:
-            # when we reach the new first audio, skip it
-            if s == selected_stream:
-                continue
-
             # when we reach the current first audio, add the new first audio, just before
             if s == current_first_audio_stream:
                 new_stream_order.append(selected_stream)
+
+            # when we reach the selected stream, skip it if we are reordering the streams
+            if s == selected_stream and not will_encode:
+                continue
 
             # add the stream
             new_stream_order.append(s)
 
         return new_stream_order
 
-    def _out_param_for_stream(self, current_stream, selected_stream, index):
+    def _out_param_for_stream(self, streams, selected_stream_index, index):
         # for the stream that was selected, if it is NOT aac, we will re-encode
-        if current_stream == selected_stream and not StreamFinder.is_aac(selected_stream):
+        current_stream = streams[index]
+
+        if index == selected_stream_index and self._requires_encode(current_stream):
             # use the larger of the min bit rate set in the config or the current bit rate
             min_bit_rate = cfg.get("audio_min_bitrate", 320000)
-            current_bit_rate = int(selected_stream.get("bit_rate", "0"))
+            current_bit_rate = int(current_stream.get("bit_rate", "0"))
             new_bit_rate = max([min_bit_rate, current_bit_rate])
             return "-c:{index} aac -b:{index} {bitrate}".format(index=index, bitrate=new_bit_rate)
 
@@ -166,13 +167,16 @@ class FileProcessor(object):
             return "-c:{index} copy".format(index=index)
 
     def _build_ffmpeg_params(self, new_stream_order, selected_stream):
+        # find the first index of the selected stream (it may exist in the order twice if we are re-encoding)
+        selected_stream_index = new_stream_order.index(selected_stream)
+
         in_params = []
         for s in new_stream_order:
             in_params.append("-map 0:{0}".format(s["index"]))
 
         out_params = []
-        for index, s in enumerate(new_stream_order):
-            out_params.append(self._out_param_for_stream(s, selected_stream, index))
+        for index in range(len(new_stream_order)):
+            out_params.append(self._out_param_for_stream(new_stream_order, selected_stream_index, index))
 
         return ("ffmpeg -i \"{input}\" {ins} {outs} {extra} \"{output}\""
                 .format(input=str(self.file_path),
