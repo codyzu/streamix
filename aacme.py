@@ -7,7 +7,7 @@ import pexpect
 import yaml
 import io
 
-__version__ = "0.6"
+__version__ = "1.0"
 __author__ = 'cody'
 
 # http://ffmpeg.org/ffmpeg.html#Advanced-options
