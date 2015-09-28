@@ -6,6 +6,7 @@ import os
 import pexpect
 import yaml
 import io
+import enum
 
 __version__ = "1.0"
 __author__ = 'cody'
@@ -41,13 +42,11 @@ def configure_logging():
 def collect_candidate_files():
     """Scan the directories for all matchig files"""
     directories = [pathlib.Path(d) for d in cfg.get("directories", [])]
-    globs = ["*.{0}".format(e) for e in cfg.get("extensions", [])]
 
     matching_files = []
     for directory in directories:
         logging.info("Searching directory: {0}".format(directory))
-        for glob in globs:
-            matching_files.extend(directory.rglob(glob))
+        matching_files.extend(directory.rglob('*'))
 
     # sort the file list so it looks logical in the logs
     return sorted(matching_files)
@@ -83,13 +82,30 @@ class StreamChooser:
         return streams[0] if len(streams) > 0 else None
 
 
+class FileState(enum.Enum):
+    Ignore = 1
+    Skip = 2
+    Remap = 3
+    Convert = 4
+    Unknown = 5
+
 class FileProcessor(object):
     """Determines if a file should be processed and builds the ffmpeg command to process the file"""
+    # SKIP = "skip"
+    # REMAP = "remap"
+    # CONVERT = "convert"
+    # UNKNOWN = "unknown"
+    # IGNORED_EXTENSION = "ignored extension"
 
     def __init__(self, file_path: pathlib.Path):
+        self.extensions = cfg.get('extensions', [])
+        self.safe_codecs = cfg.get('safe_codecs', [])
         self.file_path = file_path
-        self.streams = []
-        self.finder = StreamFinder([])
+        self.file_info = self._read_file_info()
+        self.raw_streams = self.file_info.get("streams", [])
+        self.finder = StreamFinder(self.raw_streams, self.safe_codecs)
+        self.streams = FileStreams(self.raw_streams, self.safe_codecs)
+        self.state = self._get_file_state()
 
     def process(self) -> str:
         """Read the file streams and build the ffmpeg command to transform the file (if required)"""
@@ -108,11 +124,88 @@ class FileProcessor(object):
         new_stream_order = self._create_new_stream_order(selected_stream)
         return self._build_ffmpeg_params(new_stream_order, selected_stream)
 
-    def _read_file_info(self):
-        ffprobe_cmd = "ffprobe -v quiet -print_format json -show_format -show_streams \"{0}\"".format(self.file_path)
+    def get_command(self):
+        logger.info("File will be {0}".format(self.state))
 
-        ffprobe_json, code = pexpect.runu(ffprobe_cmd, timeout=30, withexitstatus=True)
-        return json.loads(ffprobe_json)
+        if self.state == FileState.Remap:
+            return self._remap_command()
+
+        if self.state == FileState.Convert:
+            return self._convert_command()
+
+    def _remap_command(self):
+        new_stream_order = self._remap_stream_order()
+
+        in_params = []
+        for s in new_stream_order:
+            in_params.append("-map 0:{0}".format(s["index"]))
+
+        out_params = []
+        for index, s in enumerate(new_stream_order):
+            out_params.append("-c:{0} copy".format(s["index"]))
+
+    def _build_ffmpeg_command(self, ins, outs):
+        return ("ffmpeg -i \"{input}\" {ins} {outs} {extra} \"{output}\""
+            .format(input=str(self.file_path),
+                    ins=" ".join(ins),
+                    outs=" ".join(outs),
+                    extra=cfg.get("extra_encode_params", ""),
+                    output=self.temp_file_name))
+
+
+    def _remap_stream_order(self):
+        new_first = self.streams.first_safe_eng()
+        current_first = self.streams.first_audio()
+
+        new_stream_order = []
+
+        for s in self.streams.raw_streams:
+            # when we reach the new first audio, skip it
+            if s == new_first.raw:
+                continue
+
+            # when we reach the current first audio, add the new first audio, just before
+            if s == current_first.raw:
+                new_stream_order.append(new_first.raw)
+
+            # add the stream
+            new_stream_order.append(s)
+
+        return new_stream_order
+
+    def _convert_command(self):
+        pass
+
+    def _read_file_info(self):
+        try:
+            ffprobe_cmd = "ffprobe -v quiet -print_format json -show_format -show_streams \"{0}\"".format(self.file_path)
+
+            ffprobe_json, code = pexpect.runu(ffprobe_cmd, timeout=30, withexitstatus=True)
+            return json.loads(ffprobe_json)
+        except Exception as exc:
+            logger.exception("Error reading file info")
+            return {}
+
+    def _get_file_state(self):
+        if self.file_path.suffix not in self.extensions:
+            return FileState.Ignore
+
+        first = self.streams.first_audio()
+
+        if first is None:
+            return FileState.Unknown
+
+        if first.is_eng() and first.is_safe():
+            return FileState.skip
+
+        if not self.streams.has_eng():
+            return FileState.skip
+
+        if self.streams.has_safe_eng():
+            return FileState.Remap
+
+        if self.streams.has_eng():
+            return FileState.Convert
 
     def _requires_ffmpeg(self, selected_stream):
         # if no stream was selected, it indicates no audio streams were found
@@ -227,8 +320,57 @@ class FfmpegRunner:
             logger.info("Successfully re-encoded: {0}".format(self.file_processor.file_path))
 
 
+class Stream:
+    def __init__(self, raw_stream, safe_codecs):
+        self.raw = raw_stream
+        self.safe_codecs = safe_codecs
+
+    def is_safe(self):
+        return self.get_codec() in self.safe_codecs
+
+    # def is_aac(self):
+    #     return self.stream.get("codec_name", "").lower() == "aac"
+
+    def is_eng(self):
+        return self.raw.get("tags", {}).get("language", "").lower() == "eng"
+
+    # def is_video(self):
+    #     return self.stream.get("codec_type", "").lower() == "video"
+
+    def is_audio(self):
+        return self.raw.get("codec_type", "").lower() == "audio"
+
+    # @staticmethod
+    # def is_not(f):
+    #     return lambda s: not f(s)
+
+    def get_codec(self):
+        return self.raw.get("codec_type", "").lower()
+
+
+class FileStreams:
+    def __init__(self, streams, safe_codecs):
+        self.safe_codecs = safe_codecs
+        self.raw_streams = [Stream(s, self.safe_codecs) for s in streams]
+        self.audio = [s for s in self.raw_streams if s.is_audio()]
+
+    def first_audio(self):
+        return next((s for s in self.audio), None)
+
+    def has_eng(self):
+        return next((s for s in self.audio if s.is_eng()), None) is not None
+
+    def first_safe_eng(self):
+        return next((s for s in self.audio if s.is_safe() and s.is_eng()), None)
+
+    def has_safe_eng(self):
+        return self.first_safe_eng() is not None
+
+
+
 class StreamFinder:
-    def __init__(self, streams):
+    def __init__(self, streams, safe_codecs):
+        self.safe_codecs = safe_codecs
         self.streams = streams
 
     def find(self, *filters):
@@ -244,6 +386,8 @@ class StreamFinder:
     def first_audio(self):
         all_audio_streams = self.all_audio()
         return all_audio_streams[0] if len(all_audio_streams) > 0 else None
+
+
 
     @staticmethod
     def _apply_filters(stream, filters):
@@ -281,13 +425,20 @@ class StreamFinder:
     def is_not(f):
         return lambda s: not f(s)
 
+    @staticmethod
+    def get_codec(stream):
+        return stream.get("codec_type", "").lower()
+
 
 load_config()
 configure_logging()
 
 video_files = collect_candidate_files()
-
 logging.root.debug("Checking {0} files".format(len(video_files)))
+
+files = [FileProcessor(f) for f in video_files]
+
+for
 
 ffmppeg_runners = []
 for v in video_files:

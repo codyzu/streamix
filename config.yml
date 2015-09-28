@@ -23,6 +23,11 @@ extensions:
   - mkv
 
 
+# list of safe codecs
+safe_codecs:
+  - aac
+  - ac3
+
 
 #########
 # ffmpgeg
