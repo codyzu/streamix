@@ -1,0 +1,42 @@
+
+safe_codecs = ['aac', 'ac3']
+
+concerned_extensions = ['mkv', 'mp4', 'avi']
+
+if video in concerned_extensions:
+	if (first audio stream is english and safe_codecs in first audio stream of video) or (if no english audio at all):
+			then do nothing
+			log skip
+	elif other codecs have safe_codecs and eng:
+			log remap
+			remap to first stream and no conversion
+	elif english audio in other streams:
+		Convert highest quality prority or convert the highestbitrate of eng audio:
+			log conversion
+			Convert to 'aac' to first audio stream	
+			copy the converted stream to stream 2 and keep all other streams (ie - subtitles, jpeg, etc)
+	else:
+		Log the uncount for situation
+else:
+		log skip
+		
+Logging:
+
+log_path = /home/log/blah
+
+If you use three different files to log differnt things, then lable there purposes.
+
+For each run add to that one file - append 10 lines seperation or some kind of breaker for each run.
+
+It might be easier to use one file that has unlimited size.  This needs to be historical and I will manually dump the file if it gets to big.
+
+For each run then you would use a break link and datetime stamp
+
+****************************************
+
+Start of run:  datetime
+
+
+
+	
+		
