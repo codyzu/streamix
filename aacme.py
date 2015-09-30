@@ -68,12 +68,23 @@ class FileProcessor(object):
     # IGNORED_EXTENSION = "ignored extension"
 
     def __init__(self, file_path: pathlib.Path):
+        self.dry_run = cfg.get("dry-run", False)
         self.extensions = cfg.get('extensions', [])
         self.safe_codecs = cfg.get('safe_codecs', [])
         self.codec_priority = cfg.get('audio_codec_priority', [])
         self.min_bit_rate = cfg.get("audio_min_bitrate", 320000)
         self.file_path = file_path
+
+        # initialize the state to empty values
+        self.raw_streams = []
+        self.file_streams = FileStreams([], self.safe_codecs, self.codec_priority)
+        self.state = FileState.Unknown
+
+        # load the file info and re-initialize the state
         self.file_info = self._read_file_info()
+        self._file_info_loaded()
+
+    def _file_info_loaded(self):
         self.raw_streams = self.file_info.get("streams", [])
         self.file_streams = FileStreams(self.raw_streams, self.safe_codecs, self.codec_priority)
         self.state = self._get_file_state()
@@ -206,7 +217,7 @@ class FileProcessor(object):
             return {}
 
     def _get_file_state(self):
-        if self.file_path.suffix not in self.extensions:
+        if self.file_path.suffix.lstrip(".") not in self.extensions:
             return FileState.Ignore
 
         first = self.file_streams.first_audio()
@@ -240,7 +251,7 @@ class FileProcessor(object):
         logger.info("Executing: {0}".format(cmd))
 
         # stop now if dry run set
-        if cfg.get("dry-run", False):
+        if self.dry_run:
             logger.warning("Execution skipping (dry-run)!")
             return
 
@@ -279,10 +290,10 @@ class Stream:
         return self.raw.get("codec_type", "").lower() == "audio"
 
     def get_codec(self):
-        return self.raw.get("codec_type", "").lower()
+        return self.raw.get("codec_name", "").lower()
 
     def get_bitrate(self):
-        return self.raw.get("bit_rate", "0")
+        return self.raw.get("bit_rate", 0)
 
 
 class FileStreams:
@@ -336,47 +347,51 @@ class FileStreams:
         return selected_stream
 
 
-load_config()
-configure_logging()
+def main():
+    load_config()
+    configure_logging()
 
-video_files = collect_candidate_files()
-logging.root.debug("""
-********************************************************
-*
-* START
-*
-* Checking {0} files
-*
-********************************************************
-""".format(len(video_files)))
+    video_files = collect_candidate_files()
+    logging.root.debug("""
+    ********************************************************
+    *
+    * START
+    *
+    * Checking {0} files
+    *
+    ********************************************************
+    """.format(len(video_files)))
 
-processors = []
-for f in video_files:
-    try:
-        processors.append(FileProcessor(f))
-    except Exception:
-        logger.error("Error reading file: {0}".format(f))
-
-count = 0
-for p in processors:
-    p.print_file_header()
-
-    if p.needs_processing():
+    processors = []
+    for f in video_files:
         try:
-            p.run()
-            count += 1
+            processors.append(FileProcessor(f))
         except Exception:
-            logger.error("Error processing file: {0}".format(p.file_path))
+            logger.error("Error reading file: {0}".format(f))
 
-logger.info("""
-********************************************************
-*
-* END
-*
-* Processed {0} files
-*
-********************************************************
-""".format(count))
+    count = 0
+    for p in processors:
+        p.print_file_header()
+
+        if p.needs_processing():
+            try:
+                p.run()
+                count += 1
+            except Exception:
+                logger.error("Error processing file: {0}".format(p.file_path))
+
+    logger.info("""
+    ********************************************************
+    *
+    * END
+    *
+    * Processed {0} files
+    *
+    ********************************************************
+    """.format(count))
+
+if __name__ == "__main__":
+    main()
 
 """
 To review the logic: if 1st audio stream aac, then do nothing

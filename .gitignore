@@ -9,3 +9,4 @@ aacme.log
 aacme/*
 release/
 __pycache__/
+.cache/
