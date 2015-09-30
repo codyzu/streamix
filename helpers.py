@@ -42,7 +42,7 @@ def build_info(streams):
     return info
 
 
-def build_file_processor_for_streams(streams, filename=None):
+def build_file_processor_for_streams(streams, filename=None)->aacme.FileProcessor:
     name = "file.mkv" if filename is None else filename
 
     aacme.load_config()

@@ -144,15 +144,15 @@ class FileProcessor(object):
 
         for s in self.file_streams.streams:
             # when we reach the new first audio, skip it
-            if s == new_first.raw:
+            if s.raw == new_first.raw:
                 continue
 
             # when we reach the current first audio, add the new first audio, just before
-            if s == current_first.raw:
+            if s.raw == current_first.raw:
                 new_stream_order.append(new_first.raw)
 
             # add the stream
-            new_stream_order.append(s)
+            new_stream_order.append(s.raw)
 
         return new_stream_order
 
