@@ -22,8 +22,7 @@ extensions:
   - mpv
   - mkv
 
-
-# list of safe codecs
+# list of safe codecs to use when choosing a stream for remapping
 safe_codecs:
   - aac
   - ac3
@@ -85,10 +84,13 @@ logging:
     # this logs to rotating log file
     file:
       formatter: long
-      class : logging.handlers.RotatingFileHandler
+      class : logging.handlers.TimedRotatingFileHandler
       filename: aacme.log
-      maxBytes: 1024
-      backupCount: 3
+      when: midnight
+      # interval is how many days to log to a log file before creating a new file (1 = 1 day, 7 = 1 week)
+      interval: 1
+      # backupCount is how many previous log files to keep
+      backupCount: 7
 
   # connect the handlers and define the default log level
   root:
