@@ -1,0 +1,99 @@
+{
+    "streams": [
+        {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+            "profile": "High",
+            "codec_type": "video",
+            "codec_time_base": "416667/20000000",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "width": 1280,
+            "height": 536,
+            "has_b_frames": 2,
+            "sample_aspect_ratio": "1:1",
+            "display_aspect_ratio": "160:67",
+            "pix_fmt": "yuv420p",
+            "level": 41,
+            "r_frame_rate": "24/1",
+            "avg_frame_rate": "24/1",
+            "time_base": "1/1000",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "bits_per_raw_sample": "8",
+            "disposition": {
+                "default": 1,
+                "dub": 0,
+                "original": 0,
+                "comment": 0,
+                "lyrics": 0,
+                "karaoke": 0,
+                "forced": 0,
+                "hearing_impaired": 0,
+                "visual_impaired": 0,
+                "clean_effects": 0,
+                "attached_pic": 0
+            },
+            "tags": {
+                "language": "fre",
+                "title": "Les Visiteurs By 3Li"
+            }
+        },
+        {
+            "index": 1,
+            "codec_name": "dca",
+            "codec_long_name": "DCA (DTS Coherent Acoustics)",
+            "profile": "DTS",
+            "codec_type": "audio",
+            "codec_time_base": "1/48000",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "sample_fmt": "fltp",
+            "sample_rate": "48000",
+            "channels": 6,
+            "channel_layout": "5.1(side)",
+            "bits_per_sample": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/1000",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "bit_rate": "768000",
+            "disposition": {
+                "default": 1,
+                "dub": 0,
+                "original": 0,
+                "comment": 0,
+                "lyrics": 0,
+                "karaoke": 0,
+                "forced": 0,
+                "hearing_impaired": 0,
+                "visual_impaired": 0,
+                "clean_effects": 0,
+                "attached_pic": 0
+            },
+            "tags": {
+                "language": "fre",
+                "title": "Les Visiteurs DTS 5.1"
+            }
+        }
+    ],
+    "format": {
+        "filename": "/home/cody/Downloads/Les Visiteurs 1993 BluRay 720p DTS x264-3Li/Les Visiteurs 1993 3Li BluRay 720p.mkv",
+        "nb_streams": 2,
+        "nb_programs": 0,
+        "format_name": "matroska,webm",
+        "format_long_name": "Matroska / WebM",
+        "start_time": "0.000000",
+        "duration": "6404.096000",
+        "size": "4083203340",
+        "bit_rate": "5100739",
+        "probe_score": 100,
+        "tags": {
+            "title": "Les Visiteurs By 3Li",
+            "encoder": "libebml v1.3.0 + libmatroska v1.4.0",
+            "creation_time": "1970-01-01 00:00:02"
+        }
+    }
+}

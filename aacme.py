@@ -164,12 +164,10 @@ class FileProcessor(object):
 
         for index, s in enumerate(self.raw_streams):
             if s == fist_audio_stream.raw:
+                # note the index for when we build the ffmpeg params
                 conversion_index = index
-                new_order.append(s)
-                new_order.append(s)
-
-            if s == selected_stream.raw:
-                continue
+                # insert the selected stream first
+                new_order.append(selected_stream.raw)
 
             new_order.append(s)
 
@@ -353,14 +351,16 @@ def main():
 
     video_files = collect_candidate_files()
     logging.root.debug("""
-    ********************************************************
-    *
-    * START
-    *
-    * Checking {0} files
-    *
-    ********************************************************
-    """.format(len(video_files)))
+
+
+********************************************************
+*
+* START
+*
+* Checking {0} files
+*
+********************************************************
+""".format(len(video_files)))
 
     processors = []
     for f in video_files:
@@ -381,14 +381,16 @@ def main():
                 logger.error("Error processing file: {0}".format(p.file_path))
 
     logger.info("""
-    ********************************************************
-    *
-    * END
-    *
-    * Processed {0} files
-    *
-    ********************************************************
-    """.format(count))
+********************************************************
+*
+* END
+*
+* Processed {0} files
+*
+********************************************************
+
+
+""".format(count))
 
 if __name__ == "__main__":
     main()
