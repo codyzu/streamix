@@ -94,6 +94,7 @@ logging:
 
   # connect the handlers and define the default log level
   root:
+    # set this to INFO when you don't want to see the reason why files were skipped
     level: DEBUG
     handlers: [console, file]
 
