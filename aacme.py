@@ -93,6 +93,7 @@ class FileProcessor(object):
         return self.state == FileState.Remap or self.state == FileState.Convert
 
     def print_file_header(self):
+        log_level = logging.INFO if self.needs_processing() else logging.DEBUG
         header = """
 ********************************************************
 *
@@ -102,7 +103,7 @@ class FileProcessor(object):
 *
 ********************************************************
 """
-        logger.info(header.format(filename=self.file_path, state=self.state))
+        logger.log(log_level, header.format(filename=self.file_path, state=self.state))
 
     def _get_command(self):
         logger.info("File will be {0}".format(self.state))
