@@ -351,7 +351,7 @@ def main():
     configure_logging()
 
     video_files = collect_candidate_files()
-    logging.root.debug("""
+    logging.root.info("""
 
 
 ********************************************************
