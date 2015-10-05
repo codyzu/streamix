@@ -316,6 +316,22 @@ def test_convert_command_uses_stream_bitrate_if_higher():
     assert tokens[bitrate_token_index + 1] == str(expected_bitrate)
 
 
+def test_convert_command_uses_correct_bitrate_if_file_has_string_bitrate():
+    expected_bitrate = 480000
+    s1 = helpers.build_video_stream()
+    s2 = helpers.build_audio_stream("aac")
+    s3 = helpers.build_audio_stream("abc", language="eng", bitrate=str(expected_bitrate))
+    s4 = helpers.build_audio_stream("abc")
+    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+
+    # noinspection PyProtectedMember
+    cmd = file_processor._get_command()
+
+    tokens = cmd.split()
+    encode_token_index = next(i for i, t in enumerate(tokens) if t.startswith("-b:"))
+    assert tokens[encode_token_index + 1] == str(expected_bitrate)
+
+
 #########################################
 #
 # Test convert stream selection
@@ -330,7 +346,7 @@ def test_stream_reads_bitrate():
 
     stream = aacme.Stream(streams[1], [])
 
-    assert stream.get_bitrate() == "768000"
+    assert stream.get_bitrate() == 768000
 
 
 def test_stream_not_in_eng():
