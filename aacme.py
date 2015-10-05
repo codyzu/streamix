@@ -106,7 +106,7 @@ class FileProcessor(object):
         logger.log(log_level, header.format(filename=self.file_path, state=self.state))
 
     def _get_command(self):
-        logger.info("File will be {0}".format(self.state))
+        logger.info(self.state)
 
         if self.state == FileState.Remap:
             return self._remap_command()

@@ -384,15 +384,12 @@ def test_stream_get_codec():
 
 #########################################
 #
-# Test sub processing
+# Test run
 #
 #########################################
 
 @unittest.mock.patch("aacme.os.rename")
 def test_subprocess_call(mock_rename):
-    # aacme.load_config()
-    # aacme.configure_logging()
-
     s1 = helpers.build_video_stream()
     s2 = helpers.build_audio_stream("aac")
     file_processor = helpers.build_file_processor_for_streams([s1, s2])
@@ -400,8 +397,6 @@ def test_subprocess_call(mock_rename):
     with unittest.mock.patch("aacme.logger") as mock_logger:
         with unittest.mock.patch("aacme.FileProcessor._get_command") as mock_get_command:
             mock_get_command.return_value = "ls -la"
-            # mock_get_command.side_effect = Exception("boom")
-
             file_processor.run()
 
         assert mock_logger.info.assert_called
@@ -409,3 +404,19 @@ def test_subprocess_call(mock_rename):
         assert info_args[0][0].startswith("Successfully re-encoded:")
 
 
+def test_command_with_client_json():
+    file_processor = helpers.build_file_processor_for_json_file("test-info_client.json")
+
+    with unittest.mock.patch("aacme.os.rename"):
+        with unittest.mock.patch("aacme.pexpect.runu") as mock_run:
+            mock_run.return_value = "", 0
+
+            with unittest.mock.patch("aacme.logger") as mock_logger:
+                file_processor.run()
+
+    info_messages = [p[0] for p, _ in mock_logger.info.call_args_list]
+    executing_token = "Executing: "
+    execution_message = next(m for m in info_messages if m.startswith(executing_token))
+    ffmpeg_command = execution_message[len(executing_token):]
+
+    assert ffmpeg_command == 'ffmpeg -i "file.mkv" -map 0:0 -map 0:1 -map 0:1 -c:0 copy -c:1 aac -b:1 1536000 -c:1 copy -strict experimental "file.tmp.mkv"'
