@@ -1,6 +1,8 @@
+import io
 import pathlib
 import aacme
 import pytest
+import json
 
 __author__ = 'cody'
 
@@ -42,13 +44,24 @@ def build_info(streams):
     return info
 
 
-def build_file_processor_for_streams(streams, filename=None)->aacme.FileProcessor:
+def build_file_processor_for_info(info, filename=None):
     name = "file.mkv" if filename is None else filename
 
     aacme.load_config()
 
     file_processor = aacme.FileProcessor(pathlib.Path(name))
-    file_processor.file_info = build_info(streams)
+    file_processor.file_info = info
     file_processor._file_info_loaded()
 
     return file_processor
+
+
+def build_file_processor_for_streams(streams, filename=None)->aacme.FileProcessor:
+    name = "file.mkv" if filename is None else filename
+    return build_file_processor_for_info(build_info(streams), filename)
+
+
+def build_file_processor_for_json_file(json_file, filename=None):
+    with io.open(str(json_file)) as f:
+        info = json.load(f)
+    return build_file_processor_for_info(info, filename)
