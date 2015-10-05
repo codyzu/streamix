@@ -256,16 +256,18 @@ class FileProcessor(object):
 
         try:
             output, code = pexpect.runu(cmd, timeout=timeout_sec, withexitstatus=True)
-        except Exception:
+        except Exception as exc:
             logger.exception("Failed to encode file: {0}".format(self.file_path))
 
             # delete any temp file
             if self.temp_file_name.is_file():
                 logger.warning("Cleaning up file: {0}".format(self.temp_file_name))
                 os.remove(str(self.temp_file_name))
+
+            raise exc
         else:
             if code != 0:
-                logger.error(output)
+                logger.error("ffmpeg returned an error: {0}".format(output))
                 return
             else:
                 logger.debug(output)
@@ -350,8 +352,9 @@ def main():
     load_config()
     configure_logging()
 
-    video_files = collect_candidate_files()
-    logging.root.info("""
+    try:
+        video_files = collect_candidate_files()
+        logging.root.info("""
 
 
 ********************************************************
@@ -363,25 +366,25 @@ def main():
 ********************************************************
 """.format(len(video_files)))
 
-    processors = []
-    for f in video_files:
-        try:
-            processors.append(FileProcessor(f))
-        except Exception:
-            logger.error("Error reading file: {0}".format(f))
-
-    count = 0
-    for p in processors:
-        p.print_file_header()
-
-        if p.needs_processing():
+        processors = []
+        for f in video_files:
             try:
-                p.run()
-                count += 1
+                processors.append(FileProcessor(f))
             except Exception:
-                logger.error("Error processing file: {0}".format(p.file_path))
+                logger.error("Error reading file: {0}".format(f))
 
-    logger.info("""
+        count = 0
+        for p in processors:
+            p.print_file_header()
+
+            if p.needs_processing():
+                try:
+                    p.run()
+                    count += 1
+                except Exception:
+                    logger.error("Error processing file: {0}".format(p.file_path))
+
+        logger.info("""
 ********************************************************
 *
 * END
@@ -392,6 +395,8 @@ def main():
 
 
 """.format(count))
+    except Exception:
+        logger.exception("FATAL ERROR")
 
 if __name__ == "__main__":
     main()

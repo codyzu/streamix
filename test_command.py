@@ -2,6 +2,7 @@ import json
 import helpers
 import aacme
 import io
+import unittest.mock
 
 __author__ = 'cody'
 
@@ -363,3 +364,32 @@ def test_stream_get_codec():
     stream = aacme.Stream(streams[1], [])
 
     assert stream.get_codec() == "dca"
+
+
+#########################################
+#
+# Test sub processing
+#
+#########################################
+
+@unittest.mock.patch("aacme.os.rename")
+def test_subprocess_call(mock_rename):
+    # aacme.load_config()
+    # aacme.configure_logging()
+
+    s1 = helpers.build_video_stream()
+    s2 = helpers.build_audio_stream("aac")
+    file_processor = helpers.build_file_processor_for_streams([s1, s2])
+
+    with unittest.mock.patch("aacme.logger") as mock_logger:
+        with unittest.mock.patch("aacme.FileProcessor._get_command") as mock_get_command:
+            mock_get_command.return_value = "ls -la"
+            # mock_get_command.side_effect = Exception("boom")
+
+            file_processor.run()
+
+        assert mock_logger.info.assert_called
+        info_args = mock_logger.info.call_args
+        assert info_args[0][0].startswith("Successfully re-encoded:")
+
+
