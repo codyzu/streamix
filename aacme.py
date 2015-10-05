@@ -7,7 +7,7 @@ import pexpect
 import yaml
 import io
 
-__version__ = "2.0"
+__version__ = "2.2"
 __author__ = 'cody'
 
 # http://ffmpeg.org/ffmpeg.html#Advanced-options
@@ -294,7 +294,13 @@ class Stream:
         return self.raw.get("codec_name", "").lower()
 
     def get_bitrate(self):
-        return self.raw.get("bit_rate", 0)
+        bitrate = self.raw.get("bit_rate", 0)
+
+        try:
+            return int(bitrate)
+        except ValueError:
+            raise Exception("Unable to parse the bitrate '{0}'".format(bitrate))
+
 
 
 class FileStreams:
@@ -371,7 +377,7 @@ def main():
             try:
                 processors.append(FileProcessor(f))
             except Exception:
-                logger.error("Error reading file: {0}".format(f))
+                logger.exception("Error reading file: {0}".format(f))
 
         count = 0
         for p in processors:
@@ -382,7 +388,7 @@ def main():
                     p.run()
                     count += 1
                 except Exception:
-                    logger.error("Error processing file: {0}".format(p.file_path))
+                    logger.exception("Error processing file: {0}".format(p.file_path))
 
         logger.info("""
 ********************************************************

@@ -1,7 +1,8 @@
 
 .idea/
 env*
-aacme.log
+aacme*.log
+*[client]*
 *.zip
 *.mkv
 *.divx
