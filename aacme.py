@@ -7,7 +7,7 @@ import pexpect
 import yaml
 import io
 
-__version__ = "2.3"
+__version__ = "2.4"
 __author__ = 'cody'
 
 # http://ffmpeg.org/ffmpeg.html#Advanced-options
@@ -179,7 +179,7 @@ class FileProcessor(object):
         out_params = []
         for index, s in enumerate(new_order):
             if index != conversion_index:
-                out_params.append("-c:{0} copy".format(s["index"]))
+                out_params.append("-c:{0} copy".format(index))
             else:
                 bitrate = max([self.min_bit_rate, Stream(s, []).get_bitrate()])
                 out_params.append("-c:{index} aac -b:{index} {bitrate}".format(index=index, bitrate=bitrate))

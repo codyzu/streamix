@@ -254,7 +254,7 @@ def test_remap_command_respects_stream_order():
 #
 #########################################
 
-def test_convert_command_leaves_original_stream():
+def test_convert_command_leaves_original_stream_map_params():
     s1 = helpers.build_video_stream()
     s2 = helpers.build_audio_stream("aac")
     s3 = helpers.build_audio_stream("abc", language="eng")
@@ -268,6 +268,23 @@ def test_convert_command_leaves_original_stream():
     actual_stream_map = [int(tokens[i+1][2:]) for i, t in enumerate(tokens) if t.startswith("-map")]
 
     assert actual_stream_map == [0, 2, 1, 2, 3]
+
+
+def test_convert_command_maps_streams_in_codec_params():
+    s1 = helpers.build_video_stream()
+    s2 = helpers.build_audio_stream("aac")
+    s3 = helpers.build_audio_stream("abc", language="eng")
+    s4 = helpers.build_audio_stream("abc")
+    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+
+    # noinspection PyProtectedMember
+    cmd = file_processor._get_command()
+
+    tokens = cmd.split()
+    actual_codec_map = [int(t[3:]) for t in tokens if t.startswith("-c:")]
+
+    # expect the codec map to be sequential
+    assert actual_codec_map == [0, 1, 2, 3, 4]
 
 
 def test_convert_command_uses_default_bitrate_if_not_set():
@@ -419,4 +436,4 @@ def test_command_with_client_json():
     execution_message = next(m for m in info_messages if m.startswith(executing_token))
     ffmpeg_command = execution_message[len(executing_token):]
 
-    assert ffmpeg_command == 'ffmpeg -i "file.mkv" -map 0:0 -map 0:1 -map 0:1 -c:0 copy -c:1 aac -b:1 1536000 -c:1 copy -strict experimental "file.tmp.mkv"'
+    assert ffmpeg_command == 'ffmpeg -i "file.mkv" -map 0:0 -map 0:1 -map 0:1 -c:0 copy -c:1 aac -b:1 1536000 -c:2 copy -strict experimental "file.tmp.mkv"'

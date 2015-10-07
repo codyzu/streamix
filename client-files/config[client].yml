@@ -1,0 +1,102 @@
+#######
+# Debug
+#######
+# enable this line to not actually run ffmpeg (only log the commands that would be executed)
+#dry-run: True
+
+
+
+###############
+# File scanning
+###############
+
+# directories to search
+directories:
+  - test_files
+#  - /home/cody/Downloads
+
+# the file extensions to process
+extensions:
+  - mp4
+  - avi
+  - mpv
+  - mkv
+
+# list of safe codecs to use when choosing a stream for remapping
+safe_codecs:
+  - aac
+  - ac3
+
+
+#########
+# ffmpgeg
+#########
+
+# when choose between streams fo re-encode to aac, the following describes how the stream is choosen:
+# choose the eng stream with the highest priority from the list
+# if no eng streams exist (or cannot be determined) choose the stream with the highest priority the list
+# choose the stream with the lowest index (the first audio stream)
+audio_codec_priority:
+  - dts
+  - flac
+  - pcm_dvd
+  - ac3
+
+# the choosen stream will be encoded using this codec
+audio_codec: aac
+# and a minimum of this bitrate (streams at higher bitrate will keep there current bitrate)
+audio_min_bitrate: 320000
+
+# add any extra encoding params to add on to the end of the command
+extra_encode_params: '-strict experimental'
+
+# max time to to allow for encoding before killing the process
+encode_timeout_mins: 240
+
+
+
+#########
+# logging
+#########
+logging:
+
+   # define the available message formats
+  formatters:
+    # short messages for the screen
+    short:
+      format: '%(message)s'
+    # long messages for the log file
+    long:
+      format: '%(asctime)s %(levelname)-8s %(message)s'
+      datefmt: '%Y-%m-%d %H:%M:%S'
+
+
+  # define the log handlers, we can optionally override the level that the handler will log
+  handlers:
+
+    # this logs to the screen
+    console:
+#      formatter: short
+      formatter: long
+      class: logging.StreamHandler
+      stream: ext://sys.stdout
+
+    # this logs to rotating log file
+    file:
+      formatter: long
+      class : logging.handlers.TimedRotatingFileHandler
+      filename: aacme.log
+      when: midnight
+      # interval is how many days to log to a log file before creating a new file (1 = 1 day, 7 = 1 week)
+      interval: 1
+      # backupCount is how many previous log files to keep
+      backupCount: 7
+
+  # connect the handlers and define the default log level
+  root:
+    # set this to INFO when you don't want to see the reason why files were skipped
+    level: DEBUG
+    handlers: [console, file]
+
+  # required version for python
+  version: 1
