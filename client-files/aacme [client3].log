@@ -1,0 +1,344 @@
+2015-10-06 18:00:54 INFO     Searching directory: test_files
+2015-10-06 18:00:54 INFO     
+
+
+********************************************************
+*
+* START
+*
+* Checking 3 files
+*
+********************************************************
+
+2015-10-06 18:00:55 INFO     
+********************************************************
+*
+* File: test_files/The Maze Runner.mkv
+*
+* Action: File will be converted
+*
+********************************************************
+
+2015-10-06 18:00:55 INFO     File will be converted
+2015-10-06 18:00:55 INFO     Executing: ffmpeg -i "test_files/The Maze Runner.mkv" -map 0:0 -map 0:1 -map 0:1 -map 0:2 -map 0:3 -map 0:4 -map 0:5 -c:0 copy -c:1 aac -b:1 320000 -c:1 copy -c:2 copy -c:3 copy -c:4 copy -c:5 copy -strict experimental "test_files/The Maze Runner.tmp.mkv"
+2015-10-06 18:00:56 ERROR    ffmpeg returned an error: ffmpeg version 2.8 Copyright (c) 2000-2015 the FFmpeg developers
+  built with gcc 4.2.1 (GCC) 20070831 patched [FreeBSD]
+  configuration: --enable-libaacplus --disable-indev=alsa --disable-outdev=alsa --disable-libopencore-amrnb --disable-libopencore-amrwb --disable-libass --disable-libcdio --disable-libcelt --disable-debug --enable-libfaac --enable-libfdk-aac --enable-ffserver --enable-fontconfig --enable-libfreetype --enable-frei0r --disable-libgsm --enable-iconv --disable-indev=jack --disable-libmp3lame --disable-libbluray --disable-libv4l2 --disable-indev=v4l2 --disable-outdev=v4l2 --enable-mmx --disable-libmodplug --disable-openal --disable-indev=openal --enable-libopencv --enable-libopenh264 --disable-libopenjpeg --disable-libopus --disable-libpulse --disable-indev=pulse --disable-outdev=pulse --disable-librtmp --enable-libschroedinger --disable-libsmbclient --disable-libspeex --enable-sse --enable-libtheora --disable-vaapi --disable-vdpau --enable-libvorbis --disable-libvo-aacenc --disable-libvo-amrwbenc --enable-libvpx --disable-x11grab --enable-libx264 --enable-libx265 --enable-libxvid --enable-gnutls --disable-openssl --disable-version3 --enable-nonfree --enable-memalign-hack --prefix=/usr/local --mandir=/usr/local/man --datadir=/usr/local/share/ffmpeg --pkgconfigdir=/usr/local/libdata/pkgconfig --enable-shared --enable-gpl --enable-postproc --enable-avfilter --enable-avresample --enable-pthreads --disable-libstagefright-h264 --disable-libutvideo --disable-libsoxr --cc=cc --extra-cflags='-msse -I/usr/local/include/vorbis -I/usr/local/include' --extra-ldflags='-L/usr/local/lib ' --extra-libs=-lpthread --disable-ffplay --disable-outdev=sdl
+  libavutil      54. 31.100 / 54. 31.100
+  libavcodec     56. 60.100 / 56. 60.100
+  libavformat    56. 40.101 / 56. 40.101
+  libavdevice    56.  4.100 / 56.  4.100
+  libavfilter     5. 40.101 /  5. 40.101
+  libavresample   2.  1.  0 /  2.  1.  0
+  libswscale      3.  1.101 /  3.  1.101
+  libswresample   1.  2.101 /  1.  2.101
+  libpostproc    53.  3.100 / 53.  3.100
+[0;35m[matroska,webm @ 0x80b858420] [0m[0;33mCould not find codec parameters for stream 2 (Subtitle: hdmv_pgs_subtitle): unspecified size
+Consider increasing the value for the 'analyzeduration' and 'probesize' options
+[0m[0;35m[matroska,webm @ 0x80b858420] [0m[0;33mCould not find codec parameters for stream 3 (Subtitle: hdmv_pgs_subtitle): unspecified size
+Consider increasing the value for the 'analyzeduration' and 'probesize' options
+[0m[0;35m[matroska,webm @ 0x80b858420] [0m[0;33mCould not find codec parameters for stream 4 (Subtitle: hdmv_pgs_subtitle): unspecified size
+Consider increasing the value for the 'analyzeduration' and 'probesize' options
+[0m[0;35m[matroska,webm @ 0x80b858420] [0m[0;33mCould not find codec parameters for stream 5 (Subtitle: hdmv_pgs_subtitle): unspecified size
+Consider increasing the value for the 'analyzeduration' and 'probesize' options
+[0mInput #0, matroska,webm, from 'test_files/The Maze Runner.mkv':
+  Metadata:
+    encoder         : libebml v1.3.0 + libmatroska v1.4.1
+    creation_time   : 2014-12-03 00:42:35
+  Duration: 01:53:26.81, start: 0.000000, bitrate: 13878 kb/s
+    Chapter #0:0: start 0.000000, end 192.650000
+    Metadata:
+      title           : Chapter 1
+    Chapter #0:1: start 192.650000, end 435.977000
+    Metadata:
+      title           : Chapter 2
+    Chapter #0:2: start 435.977000, end 625.249000
+    Metadata:
+      title           : Chapter 3
+    Chapter #0:3: start 625.249000, end 855.563000
+    Metadata:
+      title           : Chapter 4
+    Chapter #0:4: start 855.563000, end 1041.248000
+    Metadata:
+      title           : Chapter 5
+    Chapter #0:5: start 1041.248000, end 1173.338000
+    Metadata:
+      title           : Chapter 6
+    Chapter #0:6: start 1173.338000, end 1401.024000
+    Metadata:
+      title           : Chapter 7
+    Chapter #0:7: start 1401.024000, end 1476.391000
+    Metadata:
+      title           : Chapter 8
+    Chapter #0:8: start 1476.391000, end 1693.108000
+    Metadata:
+      title           : Chapter 9
+    Chapter #0:9: start 1693.108000, end 1886.009000
+    Metadata:
+      title           : Chapter 10
+    Chapter #0:10: start 1886.009000, end 2052.050000
+    Metadata:
+      title           : Chapter 11
+    Chapter #0:11: start 2052.050000, end 2231.812000
+    Metadata:
+      title           : Chapter 12
+    Chapter #0:12: start 2231.812000, end 2460.875000
+    Metadata:
+      title           : Chapter 13
+    Chapter #0:13: start 2460.875000, end 2536.617000
+    Metadata:
+      title           : Chapter 14
+    Chapter #0:14: start 2536.617000, end 2747.453000
+    Metadata:
+      title           : Chapter 15
+    Chapter #0:15: start 2747.453000, end 2911.825000
+    Metadata:
+      title           : Chapter 16
+    Chapter #0:16: start 2911.825000, end 3177.799000
+    Metadata:
+      title           : Chapter 17
+    Chapter #0:17: start 3177.799000, end 3321.776000
+    Metadata:
+      title           : Chapter 18
+    Chapter #0:18: start 3321.776000, end 3478.808000
+    Metadata:
+      title           : Chapter 19
+    Chapter #0:19: start 3478.808000, end 3571.150000
+    Metadata:
+      title           : Chapter 20
+    Chapter #0:20: start 3571.150000, end 3695.274000
+    Metadata:
+      title           : Chapter 21
+    Chapter #0:21: start 3695.274000, end 3913.910000
+    Metadata:
+      title           : Chapter 22
+    Chapter #0:22: start 3913.910000, end 4122.409000
+    Metadata:
+      title           : Chapter 23
+    Chapter #0:23: start 4122.409000, end 4334.246000
+    Metadata:
+      title           : Chapter 24
+    Chapter #0:24: start 4334.246000, end 4462.833000
+    Metadata:
+      title           : Chapter 25
+    Chapter #0:25: start 4462.833000, end 4827.823000
+    Metadata:
+      title           : Chapter 26
+    Chapter #0:26: start 4827.823000, end 4945.649000
+    Metadata:
+      title           : Chapter 27
+    Chapter #0:27: start 4945.649000, end 5138.174000
+    Metadata:
+      title           : Chapter 28
+    Chapter #0:28: start 5138.174000, end 5381.584000
+    Metadata:
+      title           : Chapter 29
+    Chapter #0:29: start 5381.584000, end 5629.457000
+    Metadata:
+      title           : Chapter 30
+    Chapter #0:30: start 5629.457000, end 5803.255000
+    Metadata:
+      title           : Chapter 31
+    Chapter #0:31: start 5803.255000, end 5973.425000
+    Metadata:
+      title           : Chapter 32
+    Chapter #0:32: start 5973.425000, end 6185.596000
+    Metadata:
+      title           : Chapter 33
+    Chapter #0:33: start 6185.596000, end 6308.218000
+    Metadata:
+      title           : Chapter 34
+    Chapter #0:34: start 6308.218000, end 6372.657000
+    Metadata:
+      title           : Chapter 35
+    Chapter #0:35: start 6372.657000, end 6806.806000
+    Metadata:
+      title           : Chapter 36
+    Stream #0:0(eng): Video: h264 (High), yuv420p(tv, bt709), 1920x800 [SAR 1:1 DAR 12:5], 23.98 fps, 23.98 tbr, 1k tbn, 47.95 tbc (default)
+    Metadata:
+      title           : FraMeSToR / MPEG-4 AVC Video / 8180 kbps / 1080p / 23.976 fps / High Profile 4.1
+    Stream #0:1(eng): Audio: dts (DTS-HD MA), 48000 Hz, 5.1(side), fltp (default)
+    Metadata:
+      title           : DTS-HD Master Audio / 7.1 / 5640 kbps / 48 kHz / 24-bit
+    Stream #0:2(eng): Subtitle: hdmv_pgs_subtitle
+    Metadata:
+      title           : SDH
+    Stream #0:3(spa): Subtitle: hdmv_pgs_subtitle
+    Stream #0:4(fre): Subtitle: hdmv_pgs_subtitle
+    Stream #0:5(por): Subtitle: hdmv_pgs_subtitle
+[1;35m[matroska @ 0x80b859020] [0m[0;33mCodec for stream 0 does not use global headers but container format requires global headers
+[0m[1;35m[matroska @ 0x80b859020] [0m[0;33mCodec for stream 1 does not use global headers but container format requires global headers
+[0m[1;35m[matroska @ 0x80b859020] [0m[0;33mCodec for stream 2 does not use global headers but container format requires global headers
+[0m[1;35m[matroska @ 0x80b859020] [0m[0;33mCodec for stream 3 does not use global headers but container format requires global headers
+[0m[1;35m[matroska @ 0x80b859020] [0m[0;33mCodec for stream 4 does not use global headers but container format requires global headers
+[0m[1;35m[matroska @ 0x80b859020] [0m[0;33mCodec for stream 5 does not use global headers but container format requires global headers
+[0mOutput #0, matroska, to 'test_files/The Maze Runner.tmp.mkv':
+  Metadata:
+    encoder         : Lavf56.40.101
+    Chapter #0:0: start 0.000000, end 192.650000
+    Metadata:
+      title           : Chapter 1
+    Chapter #0:1: start 192.650000, end 435.977000
+    Metadata:
+      title           : Chapter 2
+    Chapter #0:2: start 435.977000, end 625.249000
+    Metadata:
+      title           : Chapter 3
+    Chapter #0:3: start 625.249000, end 855.563000
+    Metadata:
+      title           : Chapter 4
+    Chapter #0:4: start 855.563000, end 1041.248000
+    Metadata:
+      title           : Chapter 5
+    Chapter #0:5: start 1041.248000, end 1173.338000
+    Metadata:
+      title           : Chapter 6
+    Chapter #0:6: start 1173.338000, end 1401.024000
+    Metadata:
+      title           : Chapter 7
+    Chapter #0:7: start 1401.024000, end 1476.391000
+    Metadata:
+      title           : Chapter 8
+    Chapter #0:8: start 1476.391000, end 1693.108000
+    Metadata:
+      title           : Chapter 9
+    Chapter #0:9: start 1693.108000, end 1886.009000
+    Metadata:
+      title           : Chapter 10
+    Chapter #0:10: start 1886.009000, end 2052.050000
+    Metadata:
+      title           : Chapter 11
+    Chapter #0:11: start 2052.050000, end 2231.812000
+    Metadata:
+      title           : Chapter 12
+    Chapter #0:12: start 2231.812000, end 2460.875000
+    Metadata:
+      title           : Chapter 13
+    Chapter #0:13: start 2460.875000, end 2536.617000
+    Metadata:
+      title           : Chapter 14
+    Chapter #0:14: start 2536.617000, end 2747.453000
+    Metadata:
+      title           : Chapter 15
+    Chapter #0:15: start 2747.453000, end 2911.825000
+    Metadata:
+      title           : Chapter 16
+    Chapter #0:16: start 2911.825000, end 3177.799000
+    Metadata:
+      title           : Chapter 17
+    Chapter #0:17: start 3177.799000, end 3321.776000
+    Metadata:
+      title           : Chapter 18
+    Chapter #0:18: start 3321.776000, end 3478.808000
+    Metadata:
+      title           : Chapter 19
+    Chapter #0:19: start 3478.808000, end 3571.150000
+    Metadata:
+      title           : Chapter 20
+    Chapter #0:20: start 3571.150000, end 3695.274000
+    Metadata:
+      title           : Chapter 21
+    Chapter #0:21: start 3695.274000, end 3913.910000
+    Metadata:
+      title           : Chapter 22
+    Chapter #0:22: start 3913.910000, end 4122.409000
+    Metadata:
+      title           : Chapter 23
+    Chapter #0:23: start 4122.409000, end 4334.246000
+    Metadata:
+      title           : Chapter 24
+    Chapter #0:24: start 4334.246000, end 4462.833000
+    Metadata:
+      title           : Chapter 25
+    Chapter #0:25: start 4462.833000, end 4827.823000
+    Metadata:
+      title           : Chapter 26
+    Chapter #0:26: start 4827.823000, end 4945.649000
+    Metadata:
+      title           : Chapter 27
+    Chapter #0:27: start 4945.649000, end 5138.174000
+    Metadata:
+      title           : Chapter 28
+    Chapter #0:28: start 5138.174000, end 5381.584000
+    Metadata:
+      title           : Chapter 29
+    Chapter #0:29: start 5381.584000, end 5629.457000
+    Metadata:
+      title           : Chapter 30
+    Chapter #0:30: start 5629.457000, end 5803.255000
+    Metadata:
+      title           : Chapter 31
+    Chapter #0:31: start 5803.255000, end 5973.425000
+    Metadata:
+      title           : Chapter 32
+    Chapter #0:32: start 5973.425000, end 6185.596000
+    Metadata:
+      title           : Chapter 33
+    Chapter #0:33: start 6185.596000, end 6308.218000
+    Metadata:
+      title           : Chapter 34
+    Chapter #0:34: start 6308.218000, end 6372.657000
+    Metadata:
+      title           : Chapter 35
+    Chapter #0:35: start 6372.657000, end 6806.806000
+    Metadata:
+      title           : Chapter 36
+    Stream #0:0(eng): Video: h264 (H264 / 0x34363248), yuv420p, 1920x800 [SAR 1:1 DAR 12:5], q=2-31, 23.98 fps, 23.98 tbr, 1k tbn, 1k tbc (default)
+    Metadata:
+      title           : FraMeSToR / MPEG-4 AVC Video / 8180 kbps / 1080p / 23.976 fps / High Profile 4.1
+    Stream #0:1(eng): Audio: dts ([1] [0][0] / 0x2001), 48000 Hz, 5.1(side) (default)
+    Metadata:
+      title           : DTS-HD Master Audio / 7.1 / 5640 kbps / 48 kHz / 24-bit
+    Stream #0:2(eng): Audio: dts ([1] [0][0] / 0x2001), 48000 Hz, 5.1(side) (default)
+    Metadata:
+      title           : DTS-HD Master Audio / 7.1 / 5640 kbps / 48 kHz / 24-bit
+    Stream #0:3(eng): Subtitle: hdmv_pgs_subtitle ([255][255][255][255] / 0xFFFFFFFF)
+    Metadata:
+      title           : SDH
+    Stream #0:4(spa): Subtitle: hdmv_pgs_subtitle ([255][255][255][255] / 0xFFFFFFFF)
+    Stream #0:5(fre): Subtitle: hdmv_pgs_subtitle ([255][255][255][255] / 0xFFFFFFFF)
+    Stream #0:6(por): Subtitle: ass
+    Metadata:
+      encoder         : Lavc56.60.100 ass
+Stream mapping:
+  Stream #0:0 -> #0:0 (copy)
+  Stream #0:1 -> #0:1 (copy)
+  Stream #0:1 -> #0:2 (copy)
+  Stream #0:2 -> #0:3 (copy)
+  Stream #0:3 -> #0:4 (copy)
+  Stream #0:4 -> #0:5 (copy)
+  Stream #0:5 -> #0:6 (hdmv_pgs_subtitle (pgssub) -> ass (native))
+Press [q] to stop, [?] for help
+[1;36m[ass @ 0x80b849d20] [0m[1;31mOnly SUBTITLE_ASS type supported.
+[0m[4;31mSubtitle encoding failed
+[0mConversion failed!
+
+2015-10-06 18:00:56 DEBUG    
+********************************************************
+*
+* File: test_files/before_json.txt
+*
+* Action: File will be ignored: extension does not match
+*
+********************************************************
+
+2015-10-06 18:00:56 DEBUG    
+********************************************************
+*
+* File: test_files/json.txt
+*
+* Action: File will be ignored: extension does not match
+*
+********************************************************
+
+2015-10-06 18:00:56 INFO     
+********************************************************
+*
+* END
+*
+* Processed 1 files
+*
+********************************************************
+
+
+

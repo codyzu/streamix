@@ -1,13 +1,10 @@
 
 .idea/
 env*
-aacme*.log
-*client*.log
-*client*.yml
+/aacme*.log*
 *.zip
 *.mkv
 *.divx
-*.log.*
 aacme/*
 release/
 __pycache__/

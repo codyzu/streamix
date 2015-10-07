@@ -1,0 +1,44 @@
+2015-10-05 07:27:56 INFO     Searching directory: test_files
+2015-10-05 07:27:56 INFO     
+
+
+********************************************************
+*
+* START
+*
+* Checking 1 files
+*
+********************************************************
+
+2015-10-05 07:27:56 INFO     
+********************************************************
+*
+* File: test_files/Southpaw.mkv
+*
+* Action: File will be converted
+*
+********************************************************
+
+2015-10-05 07:27:56 INFO     File will be File will be converted
+2015-10-05 07:27:56 ERROR    Error processing file: test_files/Southpaw.mkv
+Traceback (most recent call last):
+  File "aacme.py", line 382, in main
+    p.run()
+  File "aacme.py", line 248, in run
+    cmd = self._get_command()
+  File "aacme.py", line 115, in _get_command
+    return self._convert_command()
+  File "aacme.py", line 184, in _convert_command
+    bitrate = max([self.min_bit_rate, Stream(s, []).get_bitrate()])
+TypeError: unorderable types: str() > int()
+2015-10-05 07:27:56 INFO     
+********************************************************
+*
+* END
+*
+* Processed 0 files
+*
+********************************************************
+
+
+
