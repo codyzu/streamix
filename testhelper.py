@@ -1,6 +1,6 @@
 import io
 import pathlib
-import aacme
+import streamix
 import pytest
 import json
 
@@ -47,16 +47,16 @@ def build_info(streams):
 def build_file_processor_for_info(info, filename=None):
     name = "file.mkv" if filename is None else filename
 
-    aacme.load_config()
+    streamix.load_config()
 
-    file_processor = aacme.FileProcessor(pathlib.Path(name))
+    file_processor = streamix.FileProcessor(pathlib.Path(name))
     file_processor.file_info = info
     file_processor._file_info_loaded()
 
     return file_processor
 
 
-def build_file_processor_for_streams(streams, filename=None)->aacme.FileProcessor:
+def build_file_processor_for_streams(streams, filename=None)->streamix.FileProcessor:
     name = "file.mkv" if filename is None else filename
     return build_file_processor_for_info(build_info(streams), filename)
 

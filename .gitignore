@@ -5,7 +5,6 @@ env*
 *.zip
 *.mkv
 *.divx
-aacme/*
 release/
 __pycache__/
 .cache/

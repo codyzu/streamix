@@ -1,6 +1,6 @@
 import json
 import testhelper
-import aacme
+import streamix
 import io
 import unittest.mock
 
@@ -18,7 +18,7 @@ def test_file_with_wrong_ext_is_ignored():
     s2 = testhelper.build_audio_stream("aac")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2], filename="skipped.file")
 
-    assert file_processor.state == aacme.FileState.Ignore
+    assert file_processor.state == streamix.FileState.Ignore
 
 
 def test_file_with_only_aac_stream_is_skipped():
@@ -26,7 +26,7 @@ def test_file_with_only_aac_stream_is_skipped():
     s2 = testhelper.build_audio_stream("aac")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2])
 
-    assert file_processor.state == aacme.FileState.Skip
+    assert file_processor.state == streamix.FileState.Skip
 
 
 def test_file_with_unknown_codec_is_skipped():
@@ -34,7 +34,7 @@ def test_file_with_unknown_codec_is_skipped():
     s2 = testhelper.build_audio_stream("crazy codec")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2])
 
-    assert file_processor.state == aacme.FileState.Skip
+    assert file_processor.state == streamix.FileState.Skip
 
 
 def test_first_audio_eng_and_safe_codec_is_skipped():
@@ -43,7 +43,7 @@ def test_first_audio_eng_and_safe_codec_is_skipped():
     s3 = testhelper.build_audio_stream("aac")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3])
 
-    assert file_processor.state == aacme.FileState.Skip
+    assert file_processor.state == streamix.FileState.Skip
 
 
 def test_no_eng_audio_is_skipped():
@@ -52,7 +52,7 @@ def test_no_eng_audio_is_skipped():
     s3 = testhelper.build_audio_stream("dts")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3])
 
-    assert file_processor.state == aacme.FileState.Skip
+    assert file_processor.state == streamix.FileState.Skip
 
 
 def test_other_stream_eng_and_safe_is_remap():
@@ -61,7 +61,7 @@ def test_other_stream_eng_and_safe_is_remap():
     s3 = testhelper.build_audio_stream("aac", language="eng")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3])
 
-    assert file_processor.state == aacme.FileState.Remap
+    assert file_processor.state == streamix.FileState.Remap
 
 
 def test_other_stream_eng_is_convert():
@@ -70,7 +70,7 @@ def test_other_stream_eng_is_convert():
     s3 = testhelper.build_audio_stream("abc", language="eng")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3])
 
-    assert file_processor.state == aacme.FileState.Convert
+    assert file_processor.state == streamix.FileState.Convert
 
 
 def test_other_stream_eng_is_convert_uses_priority():
@@ -81,7 +81,7 @@ def test_other_stream_eng_is_convert_uses_priority():
     s5 = testhelper.build_audio_stream("pcm_dvd", language="eng")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4, s5])
 
-    assert file_processor.state == aacme.FileState.Convert
+    assert file_processor.state == streamix.FileState.Convert
 
 
 def test_other_stream_eng_is_convert_uses_bitrate():
@@ -92,7 +92,7 @@ def test_other_stream_eng_is_convert_uses_bitrate():
     s5 = testhelper.build_audio_stream("abc", language="eng")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4, s5])
 
-    assert file_processor.state == aacme.FileState.Convert
+    assert file_processor.state == streamix.FileState.Convert
 
 
 #########################################
@@ -361,7 +361,7 @@ def test_stream_reads_bitrate():
 
     streams = info_json["streams"]
 
-    stream = aacme.Stream(streams[1], [])
+    stream = streamix.Stream(streams[1], [])
 
     assert stream.get_bitrate() == 768000
 
@@ -372,7 +372,7 @@ def test_stream_not_in_eng():
 
     streams = info_json["streams"]
 
-    stream = aacme.Stream(streams[1], [])
+    stream = streamix.Stream(streams[1], [])
 
     assert stream.is_eng() == False
 
@@ -383,7 +383,7 @@ def test_stream_is_eng():
 
     streams = info_json["streams"]
 
-    stream = aacme.Stream(streams[0], [])
+    stream = streamix.Stream(streams[0], [])
 
     assert stream.is_eng() == True
 
@@ -394,7 +394,7 @@ def test_stream_get_codec():
 
     streams = info_json["streams"]
 
-    stream = aacme.Stream(streams[1], [])
+    stream = streamix.Stream(streams[1], [])
 
     assert stream.get_codec() == "dca"
 
@@ -405,14 +405,14 @@ def test_stream_get_codec():
 #
 #########################################
 
-@unittest.mock.patch("aacme.os.rename")
+@unittest.mock.patch("streamix.os.rename")
 def test_subprocess_call(mock_rename):
     s1 = testhelper.build_video_stream()
     s2 = testhelper.build_audio_stream("aac")
     file_processor = testhelper.build_file_processor_for_streams([s1, s2])
 
-    with unittest.mock.patch("aacme.logger") as mock_logger:
-        with unittest.mock.patch("aacme.FileProcessor._get_command") as mock_get_command:
+    with unittest.mock.patch("streamix.logger") as mock_logger:
+        with unittest.mock.patch("streamix.FileProcessor._get_command") as mock_get_command:
             mock_get_command.return_value = "ls -la"
             file_processor.run()
 
@@ -424,11 +424,11 @@ def test_subprocess_call(mock_rename):
 def test_command_with_client_json():
     file_processor = testhelper.build_file_processor_for_json_file("test-info_client.json")
 
-    with unittest.mock.patch("aacme.os.rename"):
-        with unittest.mock.patch("aacme.pexpect.runu") as mock_run:
+    with unittest.mock.patch("streamix.os.rename"):
+        with unittest.mock.patch("streamix.pexpect.runu") as mock_run:
             mock_run.return_value = "", 0
 
-            with unittest.mock.patch("aacme.logger") as mock_logger:
+            with unittest.mock.patch("streamix.logger") as mock_logger:
                 file_processor.run()
 
     info_messages = [p[0] for p, _ in mock_logger.info.call_args_list]
