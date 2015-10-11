@@ -1,5 +1,5 @@
 import json
-import helpers
+import testhelper
 import aacme
 import io
 import unittest.mock
@@ -14,83 +14,83 @@ __author__ = 'cody'
 #########################################
 
 def test_file_with_wrong_ext_is_ignored():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2], filename="skipped.file")
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2], filename="skipped.file")
 
     assert file_processor.state == aacme.FileState.Ignore
 
 
 def test_file_with_only_aac_stream_is_skipped():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2])
 
     assert file_processor.state == aacme.FileState.Skip
 
 
 def test_file_with_unknown_codec_is_skipped():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("crazy codec")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("crazy codec")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2])
 
     assert file_processor.state == aacme.FileState.Skip
 
 
 def test_first_audio_eng_and_safe_codec_is_skipped():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac", language="eng")
-    s3 = helpers.build_audio_stream("aac")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac", language="eng")
+    s3 = testhelper.build_audio_stream("aac")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3])
 
     assert file_processor.state == aacme.FileState.Skip
 
 
 def test_no_eng_audio_is_skipped():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("dts")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("dts")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3])
 
     assert file_processor.state == aacme.FileState.Skip
 
 
 def test_other_stream_eng_and_safe_is_remap():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("aac", language="eng")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("aac", language="eng")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3])
 
     assert file_processor.state == aacme.FileState.Remap
 
 
 def test_other_stream_eng_is_convert():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3])
 
     assert file_processor.state == aacme.FileState.Convert
 
 
 def test_other_stream_eng_is_convert_uses_priority():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("pcm_dvd", language="eng")
-    s4 = helpers.build_audio_stream("dts", language="eng")
-    s5 = helpers.build_audio_stream("pcm_dvd", language="eng")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4, s5])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("pcm_dvd", language="eng")
+    s4 = testhelper.build_audio_stream("dts", language="eng")
+    s5 = testhelper.build_audio_stream("pcm_dvd", language="eng")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4, s5])
 
     assert file_processor.state == aacme.FileState.Convert
 
 
 def test_other_stream_eng_is_convert_uses_bitrate():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng")
-    s4 = helpers.build_audio_stream("abc", language="eng")
-    s5 = helpers.build_audio_stream("abc", language="eng")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4, s5])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng")
+    s4 = testhelper.build_audio_stream("abc", language="eng")
+    s5 = testhelper.build_audio_stream("abc", language="eng")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4, s5])
 
     assert file_processor.state == aacme.FileState.Convert
 
@@ -102,11 +102,11 @@ def test_other_stream_eng_is_convert_uses_bitrate():
 #########################################
 
 def test_remap_moves_safe_eng_to_first():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("aac", language="eng")
-    s4 = helpers.build_audio_stream("aac")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("aac", language="eng")
+    s4 = testhelper.build_audio_stream("aac")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     stream_order = file_processor._remap_stream_order()
@@ -115,12 +115,12 @@ def test_remap_moves_safe_eng_to_first():
 
 
 def test_remap_moves_first_safe_eng_to_first():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("aac", language="eng")
-    s4 = helpers.build_audio_stream("aac")
-    s5 = helpers.build_audio_stream("aac", language="eng")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4, s5])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("aac", language="eng")
+    s4 = testhelper.build_audio_stream("aac")
+    s5 = testhelper.build_audio_stream("aac", language="eng")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4, s5])
 
     # noinspection PyProtectedMember
     stream_order = file_processor._remap_stream_order()
@@ -135,11 +135,11 @@ def test_remap_moves_first_safe_eng_to_first():
 #########################################
 
 def test_convert_selects_eng():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng")
-    s4 = helpers.build_audio_stream("abc")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng")
+    s4 = testhelper.build_audio_stream("abc")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     selected_stream = file_processor._select_stream().raw
@@ -148,12 +148,12 @@ def test_convert_selects_eng():
 
 
 def test_convert_selects_by_priority():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("pcm_dvd", language="eng")
-    s4 = helpers.build_audio_stream("dts", language="eng")
-    s5 = helpers.build_audio_stream("pcm_dvd", language="eng")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4, s5])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("pcm_dvd", language="eng")
+    s4 = testhelper.build_audio_stream("dts", language="eng")
+    s5 = testhelper.build_audio_stream("pcm_dvd", language="eng")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4, s5])
 
     # noinspection PyProtectedMember
     selected_stream = file_processor._select_stream().raw
@@ -162,12 +162,12 @@ def test_convert_selects_by_priority():
 
 
 def test_convert_uses_bitrate():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng", bitrate=1)
-    s4 = helpers.build_audio_stream("abc", language="eng", bitrate=10)
-    s5 = helpers.build_audio_stream("abc", language="eng", bitrate=2)
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4, s5])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng", bitrate=1)
+    s4 = testhelper.build_audio_stream("abc", language="eng", bitrate=10)
+    s5 = testhelper.build_audio_stream("abc", language="eng", bitrate=2)
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4, s5])
 
     # noinspection PyProtectedMember
     selected_stream = file_processor._select_stream().raw
@@ -176,14 +176,14 @@ def test_convert_uses_bitrate():
 
 
 def test_convert_uses_bitrate_after_priority():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("pcm_dvd", language="eng", bitrate=1)
-    s4 = helpers.build_audio_stream("dts", language="eng", bitrate=10)
-    s5 = helpers.build_audio_stream("pcm_dvd", language="eng", bitrate=2)
-    s6 = helpers.build_audio_stream("dts", language="eng", bitrate=100)
-    s7 = helpers.build_audio_stream("pcm_dvd", language="eng", bitrate=1000)
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4, s5, s6, s7])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("pcm_dvd", language="eng", bitrate=1)
+    s4 = testhelper.build_audio_stream("dts", language="eng", bitrate=10)
+    s5 = testhelper.build_audio_stream("pcm_dvd", language="eng", bitrate=2)
+    s6 = testhelper.build_audio_stream("dts", language="eng", bitrate=100)
+    s7 = testhelper.build_audio_stream("pcm_dvd", language="eng", bitrate=1000)
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4, s5, s6, s7])
 
     # noinspection PyProtectedMember
     selected_stream = file_processor._select_stream().raw
@@ -198,11 +198,11 @@ def test_convert_uses_bitrate_after_priority():
 #########################################
 
 def test_remap_command_only_copies():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("aac", language="eng")
-    s4 = helpers.build_audio_stream("aac")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("aac", language="eng")
+    s4 = testhelper.build_audio_stream("aac")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     cmd = file_processor._get_command()
@@ -215,11 +215,11 @@ def test_remap_command_only_copies():
 
 
 def test_remap_command_never_calls_aac():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("aac", language="eng")
-    s4 = helpers.build_audio_stream("aac")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("aac", language="eng")
+    s4 = testhelper.build_audio_stream("aac")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     cmd = file_processor._get_command()
@@ -228,11 +228,11 @@ def test_remap_command_never_calls_aac():
 
 
 def test_remap_command_respects_stream_order():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("aac", language="eng")
-    s4 = helpers.build_audio_stream("aac")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("aac", language="eng")
+    s4 = testhelper.build_audio_stream("aac")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     stream_order = file_processor._remap_stream_order()
@@ -255,11 +255,11 @@ def test_remap_command_respects_stream_order():
 #########################################
 
 def test_convert_command_leaves_original_stream_map_params():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng")
-    s4 = helpers.build_audio_stream("abc")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng")
+    s4 = testhelper.build_audio_stream("abc")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     cmd = file_processor._get_command()
@@ -271,11 +271,11 @@ def test_convert_command_leaves_original_stream_map_params():
 
 
 def test_convert_command_maps_streams_in_codec_params():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng")
-    s4 = helpers.build_audio_stream("abc")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng")
+    s4 = testhelper.build_audio_stream("abc")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     cmd = file_processor._get_command()
@@ -288,11 +288,11 @@ def test_convert_command_maps_streams_in_codec_params():
 
 
 def test_convert_command_uses_default_bitrate_if_not_set():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng")
-    s4 = helpers.build_audio_stream("abc")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng")
+    s4 = testhelper.build_audio_stream("abc")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     cmd = file_processor._get_command()
@@ -303,11 +303,11 @@ def test_convert_command_uses_default_bitrate_if_not_set():
 
 
 def test_convert_command_uses_default_bitrate_if_lower():
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng", bitrate=100)
-    s4 = helpers.build_audio_stream("abc")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng", bitrate=100)
+    s4 = testhelper.build_audio_stream("abc")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     cmd = file_processor._get_command()
@@ -319,11 +319,11 @@ def test_convert_command_uses_default_bitrate_if_lower():
 
 def test_convert_command_uses_stream_bitrate_if_higher():
     expected_bitrate = 480000
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng", bitrate=expected_bitrate)
-    s4 = helpers.build_audio_stream("abc")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng", bitrate=expected_bitrate)
+    s4 = testhelper.build_audio_stream("abc")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     cmd = file_processor._get_command()
@@ -335,11 +335,11 @@ def test_convert_command_uses_stream_bitrate_if_higher():
 
 def test_convert_command_uses_correct_bitrate_if_file_has_string_bitrate():
     expected_bitrate = 480000
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    s3 = helpers.build_audio_stream("abc", language="eng", bitrate=str(expected_bitrate))
-    s4 = helpers.build_audio_stream("abc")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2, s3, s4])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    s3 = testhelper.build_audio_stream("abc", language="eng", bitrate=str(expected_bitrate))
+    s4 = testhelper.build_audio_stream("abc")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2, s3, s4])
 
     # noinspection PyProtectedMember
     cmd = file_processor._get_command()
@@ -407,9 +407,9 @@ def test_stream_get_codec():
 
 @unittest.mock.patch("aacme.os.rename")
 def test_subprocess_call(mock_rename):
-    s1 = helpers.build_video_stream()
-    s2 = helpers.build_audio_stream("aac")
-    file_processor = helpers.build_file_processor_for_streams([s1, s2])
+    s1 = testhelper.build_video_stream()
+    s2 = testhelper.build_audio_stream("aac")
+    file_processor = testhelper.build_file_processor_for_streams([s1, s2])
 
     with unittest.mock.patch("aacme.logger") as mock_logger:
         with unittest.mock.patch("aacme.FileProcessor._get_command") as mock_get_command:
@@ -422,7 +422,7 @@ def test_subprocess_call(mock_rename):
 
 
 def test_command_with_client_json():
-    file_processor = helpers.build_file_processor_for_json_file("test-info_client.json")
+    file_processor = testhelper.build_file_processor_for_json_file("test-info_client.json")
 
     with unittest.mock.patch("aacme.os.rename"):
         with unittest.mock.patch("aacme.pexpect.runu") as mock_run:
