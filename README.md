@@ -1,8 +1,11 @@
-# ac3m3
+# streamix
+Bulk reordering of video streams
 
-## Install
+## Dependencies
+click
+pyyaml
+pytest (for testing)
 
-### Ubuntu 14.04
-
-sudo apt-get install libavdevice-dev libavformat-dev libavresample-dev libswscale-dev python3-dev
-
+## Development
+### Testing
+`py.test test_streamix.py`
