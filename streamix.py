@@ -159,22 +159,7 @@ class FileProcessor(object):
         return new_stream_order
 
     def _convert_command(self):
-        selected_stream = self._select_stream()
-        fist_audio_stream = self.file_streams.audio[0]
-        new_order = []
-        conversion_index = 0
-
-        for index, s in enumerate(self.raw_streams):
-            if s == fist_audio_stream.raw:
-                # note the index for when we build the ffmpeg params
-                conversion_index = index
-                # insert the selected stream first
-                new_order.append(selected_stream.raw)
-
-            # only add streams that are not subs or are english subs
-            stream = Stream.from_raw_stream(s)
-            if not stream.is_sub() or stream.is_eng():
-                new_order.append(s)
+        new_order, conversion_index = self._convert_stream_order()
 
         in_params = []
         for s in new_order:
@@ -189,6 +174,24 @@ class FileProcessor(object):
                 out_params.append("-c:{index} aac -b:{index} {bitrate}".format(index=index, bitrate=bitrate))
 
         return self._build_ffmpeg_command(in_params, out_params)
+
+    def _convert_stream_order(self):
+        selected_stream = self._select_stream()
+        fist_audio_stream = self.file_streams.audio[0]
+        new_order = []
+        conversion_index = 0
+        for index, s in enumerate(self.raw_streams):
+            if s == fist_audio_stream.raw:
+                # note the index for when we build the ffmpeg params
+                conversion_index = index
+                # insert the selected stream first
+                new_order.append(selected_stream.raw)
+
+            # only add streams that are not subs or are english subs
+            stream = Stream.from_raw_stream(s)
+            if not stream.is_sub() or stream.is_eng():
+                new_order.append(s)
+        return new_order, conversion_index
 
     def _select_stream(self):
         highest_priority_streams = self.file_streams.select_eng_by_priority()
