@@ -152,8 +152,8 @@ class FileProcessor(object):
             if s.raw == current_first.raw:
                 new_stream_order.append(new_first.raw)
 
-            # add the stream if it is not subs or if is english
-            if not s.is_sub() or s.is_eng():
+            # add the stream if it is not subs or if is english (or unknown lang)
+            if not s.is_sub() or not s.non_eng():
                 new_stream_order.append(s.raw)
 
         return new_stream_order
@@ -187,9 +187,9 @@ class FileProcessor(object):
                 # insert the selected stream first
                 new_order.append(selected_stream.raw)
 
-            # only add streams that are not subs or are english subs
+            # only add streams that are not subs or are english (or unknown lang) subs
             stream = Stream.from_raw_stream(s)
-            if not stream.is_sub() or stream.is_eng():
+            if not stream.is_sub() or not stream.non_eng():
                 new_order.append(s)
         return new_order, conversion_index
 
@@ -265,22 +265,24 @@ class FileProcessor(object):
             output, code = pexpect.runu(cmd, timeout=timeout_sec, withexitstatus=True)
         except Exception as exc:
             logger.exception("Failed to encode file: {0}".format(self.file_path))
-
-            # delete any temp file
-            if self.temp_file_name.is_file():
-                logger.warning("Cleaning up file: {0}".format(self.temp_file_name))
-                os.remove(str(self.temp_file_name))
-
+            self._cleanup_failed_run()
             raise exc
         else:
             if code != 0:
                 logger.error("ffmpeg returned an error: {0}".format(output))
+                self._cleanup_failed_run()
                 return
             else:
                 logger.debug(output)
 
             os.rename(str(self.temp_file_name), str(self.file_path))
             logger.info("Successfully re-encoded: {0}".format(self.file_path))
+
+    def _cleanup_failed_run(self):
+        # delete any temp file
+        if self.temp_file_name.is_file():
+            logger.warning("Cleaning up file: {0}".format(self.temp_file_name))
+            os.remove(str(self.temp_file_name))
 
 
 class Stream:
@@ -293,6 +295,10 @@ class Stream:
 
     def is_eng(self):
         return self.raw.get("tags", {}).get("language", "").lower() == "eng"
+
+    def non_eng(self):
+        """return true if the stream is a language other than eng, defaults to false if unkown language"""
+        return self.raw.get("tags", {"language": "eng"}).get("language", "eng").lower() != "eng"
 
     def is_audio(self):
         return self.raw.get("codec_type", "").lower() == "audio"
