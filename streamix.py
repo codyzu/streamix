@@ -130,8 +130,9 @@ class FileProcessor(object):
         return self._build_ffmpeg_command(in_params, out_params)
 
     def _build_ffmpeg_command(self, ins, outs):
-        return ("ffmpeg -i \"{input}\" {ins} {outs} {extra} \"{output}\""
+        return ("ffmpeg -i \"{input}\" -metadata title=\"{filename}\" {ins} {outs} {extra} \"{output}\""
                 .format(input=str(self.file_path),
+                        filename=self.file_path.name,
                         ins=" ".join(ins),
                         outs=" ".join(outs),
                         extra=cfg.get("extra_encode_params", ""),

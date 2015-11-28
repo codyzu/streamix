@@ -416,7 +416,7 @@ def test_subprocess_call(mock_rename):
             mock_get_command.return_value = "ls -la"
             file_processor.run()
 
-        assert mock_logger.info.assert_called
+        assert mock_logger.info.called
         info_args = mock_logger.info.call_args
         assert info_args[0][0].startswith("Successfully re-encoded:")
 
@@ -436,4 +436,4 @@ def test_command_with_client_json():
     execution_message = next(m for m in info_messages if m.startswith(executing_token))
     ffmpeg_command = execution_message[len(executing_token):]
 
-    assert ffmpeg_command == 'ffmpeg -i "file.mkv" -map 0:0 -map 0:1 -map 0:1 -c:0 copy -c:1 aac -b:1 1536000 -c:2 copy -strict experimental "file.tmp.mkv"'
+    assert ffmpeg_command == 'ffmpeg -i "file.mkv" -metadata title="file.mkv" -map 0:0 -map 0:1 -map 0:1 -c:0 copy -c:1 aac -b:1 1536000 -c:2 copy -strict experimental "file.tmp.mkv"'
