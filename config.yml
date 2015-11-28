@@ -12,7 +12,7 @@
 
 # directories to search
 directories:
-  - /home/cody/dev/python/aacme/test_files
+  - /home/cody/dev/python/streamix/test/run
 #  - /home/cody/Downloads
 
 # the file extensions to process

@@ -152,8 +152,9 @@ class FileProcessor(object):
             if s.raw == current_first.raw:
                 new_stream_order.append(new_first.raw)
 
-            # add the stream
-            new_stream_order.append(s.raw)
+            # add the stream if it is not subs or if is english
+            if not s.is_sub() or s.is_eng():
+                new_stream_order.append(s.raw)
 
         return new_stream_order
 
@@ -170,7 +171,10 @@ class FileProcessor(object):
                 # insert the selected stream first
                 new_order.append(selected_stream.raw)
 
-            new_order.append(s)
+            # only add streams that are not subs or are english subs
+            stream = Stream.from_raw_stream(s)
+            if not stream.is_sub() or stream.is_eng():
+                new_order.append(s)
 
         in_params = []
         for s in new_order:
@@ -300,6 +304,13 @@ class Stream:
             return int(bitrate)
         except ValueError:
             raise Exception("Unable to parse the bitrate '{0}'".format(bitrate))
+
+    def is_sub(self):
+        return self.raw.get("codec_type", "").lower() == "subtitle"
+
+    @classmethod
+    def from_raw_stream(cls, raw_stream):
+        return cls(raw_stream, [])
 
 
 
