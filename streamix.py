@@ -45,7 +45,7 @@ def collect_candidate_files():
     matching_files = []
     for directory in directories:
         logging.info("Searching directory: {0}".format(directory))
-        matching_files.extend(directory.rglob('*'))
+        matching_files.extend((d for d in directory.rglob('*') if d.is_file()))
 
     # sort the file list so it looks logical in the logs
     return sorted(matching_files)
@@ -95,6 +95,8 @@ class FileProcessor(object):
     def print_file_header(self):
         log_level = logging.INFO if self.needs_processing() else logging.DEBUG
         header = """
+
+
 ********************************************************
 *
 * File: {filename}
@@ -382,6 +384,10 @@ def main():
     try:
         video_files = collect_candidate_files()
         logging.root.info("""
+
+
+
+
 
 
 ********************************************************
